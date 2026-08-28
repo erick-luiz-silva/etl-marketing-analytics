@@ -52,9 +52,10 @@ Esqueleto montado. Extração validada por 5 testes de API documentados em
 
 | Achado | Resposta no pipeline |
 |---|---|
-| A Data API **não tem a dimensão `sessionEngaged`** (só o export BigQuery) | Filtro de bot vira `trafego_valido = engaged_sessions > 0`, coluna na Silver |
+| A Data API **não tem a dimensão `sessionEngaged`** (só o export BigQuery) | Filtro de bot por segmento: `trafego_valido` na Silver, decidido pela linha `session_start` |
 | Bots atuais usam `browser = "Chrome"` / `OS = "Windows"` | Filtro por browser vazio **descartado** (não pega nada) |
-| China = ~96% das sessões, 0% engajamento, só no site institucional | `gold.vw_qualidade_trafego` monitora quanto é descartado |
+| China = ~97% das sessões, 0% engajamento, só no site institucional | Segmento inválido = `sessions >= 30 AND taxa de engajamento < 5%`; `gold.vw_qualidade_trafego` monitora |
+| Métricas de sessão/usuário repetem em cada linha de `eventName` | Gold lê essas métricas só de `gold.vw_sessoes` (recorte `session_start`) |
 | `nome_painel` tem grafias livres e 48% `(not set)` | Normalização por regex na **Gold** (`silver.dim_painel`), ajustável sem reprocessar |
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
 | Histórico desde fev/2023; painéis só desde 27/08/2026 | `DATA_INICIO_HISTORICO` vs `DATA_INICIO_PAINEIS` em `config.py` |
@@ -79,13 +80,14 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │ SILVER  silver.ga4_eventos                    │
 │ achatada e normalizada, TODAS as linhas       │
 │ coluna site (deriva de hostName)              │
-│ coluna trafego_valido (engaged_sessions > 0)  │
+│ coluna trafego_valido (por segmento)          │
 │ silver.dim_painel — mapa de grafias           │
 └──────────────────────────────────────────────┘
         │  WHERE trafego_valido + normalização de painel
         ▼
 ┌──────────────────────────────────────────────┐
 │ GOLD — views                                  │
+│  vw_sessoes            (base, grão de sessão)  │
 │  vw_painel_normalizado                         │
 │  vw_paineis_ranking                            │
 │  vw_engajamento_dispositivo                    │

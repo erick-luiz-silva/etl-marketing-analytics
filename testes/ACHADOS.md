@@ -48,7 +48,10 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
 
 ## Consequências para o desenho (vs readme_previo)
 
-1. **Filtro de bot**: coluna `trafego_valido = (engaged_sessions > 0)` na Silver, filtrada na Gold. Descartar `browser != ''` (inútil — bots são "Chrome"). O tempo de engajamento sozinho não serve: linhas de `user_engagement` da China têm tempo residual > 0 com 0 sessões engajadas.
+1. **Filtro de bot**: coluna `trafego_valido` na Silver (filtrada na Gold), decidida **por segmento** (dia × host × geo × device × browser × OS) a partir da linha `session_start` e propagada aos demais eventos do segmento. Regra: vale se `engaged_sessions > 0` **e** não é blob de bot (`sessions >= 30 AND taxa_engajamento < 5%`). A onda da China aparece como 1 segmento/dia de ~3.000 sessões com 3 engajadas (0,09%) — excluído; segmentos pequenos com baixa taxa são preservados (usuários reais navegando de leve). Limiares heurísticos, revisar com mais histórico.
+   - Descartado o filtro `browser != ''` do readme (inútil — bots são "Chrome"/"Windows").
+   - Tempo de engajamento sozinho não serve: linhas de `user_engagement` da China têm tempo residual > 0 com 0 sessões engajadas.
+   - Métricas de sessão/usuário (`sessions`, `engagedSessions`, `activeUsers`) **repetem em cada linha de `eventName`** no runReport → só podem ser somadas num recorte de 1 evento. Gold usa `gold.vw_sessoes` (recorte `session_start`) para essas métricas.
 2. **Normalização de `nome_painel`** vai para a Gold (`dim_painel` + view), não `CASE WHEN` na Silver — mesmo princípio das keywords no projeto de proposições. Grafias precisam ser remapeadas com base nos dados reais, não no readme.
 3. **Bronze** = payload JSON cru append-only + `data_extracao` (padrão proposições), não colunas tipadas.
 4. **Silver** = tabela fixa + `INSERT ... ON CONFLICT` idempotente, não `CREATE TABLE AS`.
