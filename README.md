@@ -62,8 +62,8 @@ Extração validada por 5 testes de API documentados em
 | Os 18 painéis do Data Insights são todos distintos; o GTM manda o nome canônico | `silver.dim_painel` (dimensão descritiva, seed do CSV do time) + match exato na Gold; `dim_painel_alias` p/ drift |
 | 48% dos `painel_acessado` vêm com `nome_painel = (not set)` | contam como `painel = NULL`, fora do ranking; problema é de GTM (fora do repo) |
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
-| Histórico desde fev/2023; painéis só desde 27/08/2026 | `DATA_INICIO_HISTORICO` vs `DATA_INICIO_PAINEIS` em `config.py` |
-| Só 588 linhas/dia no grão completo | Uma chamada por dia/mês, paginação por offset como salvaguarda |
+| Incluir `customEvent:nome_painel` num relatório **corta o histórico** para ~jun/2026 (data de criação da dimensão) | **Dois relatórios**: Report A (site, sem a dimensão, desde fev/2023) e Report B (painéis, com a dimensão) |
+| Painéis só têm dados reais desde 27/08/2026 | `DATA_INICIO_HISTORICO` (fev/2023) vs `DATA_INICIO_PAINEIS` (jun/2026) em `config.py` |
 
 ---
 
@@ -71,51 +71,55 @@ Extração validada por 5 testes de API documentados em
 
 ```
 GA4 Data API  (propriedade 353835454, Service Account)
-        │  runReport — 9 dimensões × 5 métricas
+        │
+        ├── Report A (uso do site, sem custom dim)      ── desde fev/2023
+        └── Report B (painéis, com customEvent:nome_painel,
+                      filtrado a painel_acessado/clicado) ── desde jun/2026
         ▼
 ┌──────────────────────────────────────────────┐
-│ BRONZE  bronze.ga4_eventos_raw               │
-│ 1 linha por dia, payload JSON cru, append-only│
-│ bronze.controle_execucao — janela de cada run │
+│ BRONZE   1 linha por dia, JSON cru, append-only│
+│  bronze.ga4_site_raw                           │
+│  bronze.ga4_paineis_raw                        │
+│  bronze.controle_execucao (col. relatorio)     │
 └──────────────────────────────────────────────┘
         │  substitui o dia inteiro (idempotente)
         ▼
 ┌──────────────────────────────────────────────┐
-│ SILVER  silver.ga4_eventos                    │
-│ achatada e normalizada, TODAS as linhas       │
-│ coluna site (deriva de hostName)              │
-│ coluna trafego_valido (por segmento)          │
-│ silver.dim_painel — dimensão dos 18 painéis    │
-│ silver.dim_painel_alias — apelidos GA4→painel  │
+│ SILVER                                         │
+│  ga4_eventos   site: achatada, coluna site,    │
+│                coluna trafego_valido/segmento  │
+│  ga4_paineis   eventos de painel + nome_painel │
+│  dim_painel        dimensão dos 18 painéis      │
+│  dim_painel_alias  apelidos GA4 → painel        │
 └──────────────────────────────────────────────┘
-        │  WHERE trafego_valido + normalização de painel
+        │  WHERE trafego_valido (site) + normalização de painel
         ▼
 ┌──────────────────────────────────────────────┐
 │ GOLD — views                                  │
-│  vw_sessoes            (base, grão de sessão)  │
-│  vw_painel_normalizado                         │
-│  vw_paineis_ranking                            │
-│  vw_engajamento_dispositivo                    │
-│  vw_institucional_eventos                      │
-│  vw_site_overview                              │
-│  vw_qualidade_trafego        (auditoria)       │
-│  vw_paineis_sem_mapeamento   (auditoria)       │
+│  site:    vw_sessoes (base), vw_site_overview, │
+│           vw_institucional_eventos,            │
+│           vw_qualidade_trafego (auditoria)     │
+│  painéis: vw_painel_normalizado,               │
+│           vw_paineis_ranking,                  │
+│           vw_engajamento_dispositivo,          │
+│           vw_paineis_sem_mapeamento (auditoria)│
 └──────────────────────────────────────────────┘
         │
         ▼
    Power BI Desktop  (conexão direta PostgreSQL)
 ```
 
-### Grão da extração
+### Grão dos relatórios
 
-9 dimensões (máximo do runReport): `date`, `hostName`, `country`, `city`,
-`deviceCategory`, `browser`, `operatingSystem`, `eventName`,
-`customEvent:nome_painel`.
-5 métricas: `eventCount`, `sessions`, `engagedSessions`, `activeUsers`,
+**Report A (site):** `date, hostName, country, city, deviceCategory, browser,
+operatingSystem, eventName`. Serve das tabelas agregadas do GA4 → alcança fev/2023.
+
+**Report B (painéis):** `date, hostName, country, city, deviceCategory,
+eventName, customEvent:nome_painel`, filtrado a `painel_acessado` /
+`painel_clicado`. A dimensão personalizada limita o histórico a ~jun/2026.
+
+Métricas (ambos): `eventCount`, `sessions`, `engagedSessions`, `activeUsers`,
 `userEngagementDuration`.
-
-Origem de tráfego (`sessionDefaultChannelGroup`) não cabe nas 9 dimensões —
-entraria como um segundo relatório se necessário.
 
 ---
 
@@ -138,8 +142,8 @@ marketing-analytics/
 │   ├── extract_incremental.py    carga diária (janela auto-ajustável)
 │   └── pipeline.py               ponto de entrada do Task Scheduler
 ├── sql/
-│   ├── schema_bronze.sql
-│   ├── schema_silver.sql
+│   ├── schema_bronze.sql         ga4_site_raw + ga4_paineis_raw + controle
+│   ├── schema_silver.sql         ga4_eventos + ga4_paineis + dim_painel(+alias)
 │   ├── schema_gold.sql
 │   ├── seed_dim_painel.sql       snapshot dos 18 painéis (do CSV do time)
 │   └── transform_bronze_to_silver.sql
@@ -188,9 +192,11 @@ Ao mudar os painéis, editar o seed e rodar `load_dimensoes.py` de novo.
 ### Carga histórica (uma vez)
 
 ```powershell
-python extract_bronze.py                      # desde fev/2023
-python extract_bronze.py --inicio 2026-06-01  # ou um recorte
+python extract_bronze.py     # site desde fev/2023 + painéis desde jun/2026
 ```
+
+Flags: `--inicio-site`, `--inicio-painel`, `--fim` (ISO). Ao final já roda a
+transformação da silver.
 
 ### Carga diária
 
@@ -217,6 +223,10 @@ grava na bronze, re-aplica a silver e confere as views gold. Loga em
   sempre as views Gold (já filtram `trafego_valido`).
 - `nome_painel` só existe desde **27/08/2026**; eventos anteriores retornam
   `(not set)`.
+- **Painéis são preliminares.** `painel_acessado` e `painel_clicado` duplicam em
+  `/relatorios/` e a deduplicação depende de registrar `redirect_url` como
+  dimensão no GA4 (adiado — feature futura). Até lá, o dashboard usa o Report A
+  (uso do site); o ranking de painel só depois de dado limpo. Ver `testes/ACHADOS.md`.
 - Ao surgir um painel novo (ou mudar a classificação), editar
   `sql/seed_dim_painel.sql` a partir do CSV do time e rodar `load_dimensoes.py`
   — não reprocessa a extração. Se o GTM mandar uma grafia diferente do nome

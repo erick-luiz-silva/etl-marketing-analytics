@@ -1,9 +1,11 @@
 """Cliente da GA4 Data API v1beta.
 
-Autentica via Service Account (sem token manual, sem expiração) e expõe
-`extrair_eventos(inicio, fim)`, que faz o runReport no grão do modelo,
-seguindo a paginação por offset e devolvendo linhas já achatadas em dicts
-com as chaves de config.DIMENSOES + config.METRICAS.
+Autentica via Service Account (sem token manual, sem expiração) e expõe dois
+relatórios (ver testes/ACHADOS.md):
+  - extrair_site(inicio, fim)    -> uso do site, sem dimensão personalizada
+  - extrair_paineis(inicio, fim) -> eventos de painel, com customEvent:nome_painel
+
+Ambos seguem a paginação por offset e devolvem linhas achatadas em dicts.
 """
 
 import time
@@ -13,7 +15,9 @@ import google.auth.transport.requests
 import requests
 
 from config import (
-    DIMENSOES,
+    DIMENSOES_PAINEL,
+    DIMENSOES_SITE,
+    EVENTOS_PAINEL,
     GA4_CREDENTIALS_PATH,
     GA4_PROPERTY_ID,
     GA4_SCOPES,
@@ -21,7 +25,7 @@ from config import (
 )
 
 _BASE_URL = "https://analyticsdata.googleapis.com/v1beta"
-_PAGE_SIZE = 100_000          # runReport aceita até 250k; 100k é folgado p/ o volume real
+_PAGE_SIZE = 100_000
 REQUEST_TIMEOUT = 90
 MAX_RETRIES = 3
 RETRY_BACKOFF_BASE = 2        # segundos: 2, 4, 6...
@@ -30,7 +34,6 @@ _creds = None
 
 
 def _token():
-    """Reaproveita as credenciais e só renova o access token quando expira."""
     global _creds
     if _creds is None:
         _creds, _ = google.auth.load_credentials_from_file(
@@ -84,26 +87,21 @@ def _linhas_para_dicts(resposta):
     return registros
 
 
-def extrair_eventos(inicio, fim):
-    """runReport no grão do modelo para [inicio, fim], com paginação por offset.
-
-    Retorna uma lista de dicts (uma por combinação de dimensões), cada um com
-    as chaves de DIMENSOES (incl. 'date') e METRICAS, valores como string —
-    exatamente como a API devolve.
-    """
+def _extrair(dimensoes, inicio, fim, dimension_filter=None):
     base_payload = {
         "dateRanges": [{"startDate": inicio.isoformat(), "endDate": fim.isoformat()}],
-        "dimensions": [{"name": d} for d in DIMENSOES],
+        "dimensions": [{"name": d} for d in dimensoes],
         "metrics": [{"name": m} for m in METRICAS],
         "keepEmptyRows": False,
         "limit": _PAGE_SIZE,
     }
+    if dimension_filter is not None:
+        base_payload["dimensionFilter"] = dimension_filter
 
     registros = []
     offset = 0
     while True:
-        payload = {**base_payload, "offset": offset}
-        resposta = _run_report(payload)
+        resposta = _run_report({**base_payload, "offset": offset})
         pagina = _linhas_para_dicts(resposta)
         registros.extend(pagina)
 
@@ -116,11 +114,25 @@ def extrair_eventos(inicio, fim):
     return registros
 
 
+def extrair_site(inicio, fim):
+    """Report A — uso do site, todas as dimensões menos a personalizada."""
+    return _extrair(DIMENSOES_SITE, inicio, fim)
+
+
+def extrair_paineis(inicio, fim):
+    """Report B — só eventos de painel, com customEvent:nome_painel."""
+    filtro = {
+        "filter": {
+            "fieldName": "eventName",
+            "inListFilter": {"values": EVENTOS_PAINEL},
+        }
+    }
+    return _extrair(DIMENSOES_PAINEL, inicio, fim, dimension_filter=filtro)
+
+
 if __name__ == "__main__":
     from datetime import date, timedelta
 
     ontem = date.today() - timedelta(days=1)
-    dados = extrair_eventos(ontem, ontem)
-    print(f"{len(dados)} linhas para {ontem}")
-    for d in dados[:5]:
-        print(d)
+    print(f"site   {ontem}: {len(extrair_site(ontem, ontem))} linhas")
+    print(f"painel {ontem}: {len(extrair_paineis(ontem, ontem))} linhas")

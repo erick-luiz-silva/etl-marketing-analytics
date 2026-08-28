@@ -17,8 +17,29 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
 ## Teste 3 — Evento painel_acessado
 - Dados só desde 27/08/2026 (77 eventos até agora — volume ainda ínfimo).
 - **48% dos `painel_acessado` vêm com `nome_painel = "(not set)"`** — a tag GTM não está passando o parâmetro em todos os fluxos. Investigar no GTM antes de confiar no ranking de painéis.
-- Existe também um evento **`painel_clicado`** (42 eventos) não citado no readme.
-- Só `abcsdata.abcs.org.br` gera `painel_acessado` (esperado).
+- Só `abcsdata.abcs.org.br` gera eventos de painel (esperado).
+
+### `painel_acessado` vs `painel_clicado` — duplicação (análise ago/2026)
+Dois eventos rastreiam abertura de painel e **disparam juntos em `/relatorios/`**:
+
+| | `painel_clicado` (tag antiga, da empresa do site) | `painel_acessado` (tag que criamos) |
+|---|---|---|
+| onde dispara | só `/relatorios/` (clique no rótulo) | `/relatorios/` (72 ev) **e** `/` (6 ev) |
+| `nome_painel` | 100% (42/42) | 81% (62/76) |
+| extras | param `pagina` | `redirect_url` (fluxo homepage), UTM de evento |
+| ruído de teste | nenhum | ~30% com referrer `gtm_debug=` / `_gl=` / `tagassistant` |
+
+- **Fluxo A (card na homepage)**: `painel_acessado` dispara na página `/relatorios/`
+  de destino (não na `/`); só o `redirect_url` distingue de um clique de rótulo.
+- **Data API não vê `redirect_url` / `pagina` / UTM de evento** — só
+  `customEvent:nome_painel` está registrado. Separar os fluxos exige registrar
+  `redirect_url` como dimensão personalizada no GA4.
+- **Decisão (2026-08-28)**: adiado. Não registrar as dimensões agora; Report B
+  segue só com `nome_painel`. O ranking de painel fica **preliminar** (soma os
+  dois eventos, separados por `event_name`) até haver semanas de dado limpo.
+  Dashboard inicial foca no Report A (uso do site). Retomar com: registrar
+  `redirect_url`+`pagina`, coluna `origem` ('relatorios'|'homepage'|'dupe') na
+  silver, filtro de referrer p/ tirar teste.
 - Grafias reais divergem dos alvos de normalização do readme:
   `Cotações - Preços de Referência` (readme: "Preços de Referência"),
   `Matrizes Tecnificadas - Modelo de Produção` (readme: "Matrizes Tecnificadas"),
@@ -37,12 +58,24 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
 - Sinal robótico confiável no grão agregado: **`engagedSessions = 0` E `userEngagementDuration = 0`**.
 - Japão/Vietnã/Bolívia etc. aparecem com engajamento real baixo mas > 0 — confirmam a decisão de **não filtrar por país**.
 
-## Teste 5 — Extração simulada (grão completo)
-- Grão: `date, hostName, country, city, deviceCategory, browser, operatingSystem, eventName, customEvent:nome_painel`.
-- Volume: **588 linhas/dia**, 2.821 linhas/7 dias. Cabe folgado em 1 chamada, sem paginação.
-- Profundidade histórica: dados desde **fev/2023**.
+## Teste 5 — Extração simulada + profundidade histórica
+- Grão completo (9 dim): **588 linhas/dia**. Cabe folgado em 1 chamada.
 - **Onda de bots é recente**: baseline ~2.000–2.500 usuários/mês (2023 a abr/2026) → jun/2026: 16,8k → **jul/2026: 179k** → ago/2026: 106k. Dados antes de ~mai/2026 estão limpos.
 - Linha-bot típica: `China | Kashgar Prefecture | desktop | Chrome | Windows | page_view | (not set) | 3175 sessões | 0 engajadas | 0s`.
+
+### Achado crítico da carga histórica: `customEvent:nome_painel` corta o histórico
+Um relatório que inclui a dimensão personalizada `customEvent:nome_painel`
+**só retorna linhas a partir da criação da dimensão** (~jun/2026) — não retorna
+`(not set)` para o passado, retorna zero. **Não é retenção de dados.**
+
+| Consulta | Alcança |
+|---|---|
+| 8 dim, **sem** `nome_painel` | fev/2023 (3.692 linhas/mês) |
+| 9 dim, **com** `nome_painel` | só jun/2026 em diante |
+| eventos `painel_acessado`/`painel_clicado` de fato | ~120 eventos, quase todos ≥ 27/08/2026 |
+
+→ **Dois relatórios / duas tabelas** (Report A site sem custom dim; Report B
+painéis com custom dim, filtrado a eventos de painel).
 
 ---
 
@@ -53,9 +86,13 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
    - Tempo de engajamento sozinho não serve: linhas de `user_engagement` da China têm tempo residual > 0 com 0 sessões engajadas.
    - Métricas de sessão/usuário (`sessions`, `engagedSessions`, `activeUsers`) **repetem em cada linha de `eventName`** no runReport → só podem ser somadas num recorte de 1 evento. Gold usa `gold.vw_sessoes` (recorte `session_start`) para essas métricas.
 2. **`nome_painel`**: os 18 painéis do Data Insights são **todos distintos** (`Cenário Empresarial` ≠ `Cenário Empresarial - Evolução` etc.). O time mantém um CSV com a lista + classificação (tema, hierarquia, público); virou `sql/seed_dim_painel.sql` (`silver.dim_painel`). O GTM manda o nome canônico → **match exato** na Gold (`gold.vw_painel_normalizado`), com `silver.dim_painel_alias` para exceções/drift. `Comércio Exterior - Exportações/Importações` do CSV = 1 painel `Comércio Exterior`. `Tutorial` = `tipo='auxiliar'` (fora do ranking). CSV fica fora do git.
-3. **Bronze** = payload JSON cru append-only + `data_extracao` (padrão proposições), não colunas tipadas.
-4. **Silver** = tabela fixa + `INSERT ... ON CONFLICT` idempotente, não `CREATE TABLE AS`.
-5. **Tabela de controle** de janela incremental (equivalente a `bronze.controle_execucao`).
-6. **Carga histórica**: métricas de site desde fev/2023; análise de painel só desde 27/08/2026.
-7. Incluir o evento **`painel_clicado`** no escopo (decidir se entra no modelo).
+3. **Dois relatórios**: `bronze.ga4_site_raw` (Report A, fev/2023+) e
+   `bronze.ga4_paineis_raw` (Report B, jun/2026+, filtrado a `painel_acessado`/
+   `painel_clicado`). Silver: `silver.ga4_eventos` e `silver.ga4_paineis`.
+   `controle_execucao` tem coluna `relatorio` ('site'|'painel').
+4. **Bronze** = payload JSON cru append-only (1 linha/dia), não colunas tipadas.
+5. **Silver** = "apaga o dia e reinsere" (idempotente), não `CREATE TABLE AS`.
+6. **`ga4_paineis` sem `trafego_valido`**: abcsdata não tem onda de bots e a
+   métrica é a contagem bruta de acessos por painel.
+7. `painel_clicado` **entra no modelo** junto com `painel_acessado`.
 8. Abrir tarefa no GTM: 48% de `nome_painel = (not set)`.

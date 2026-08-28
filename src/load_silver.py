@@ -9,7 +9,9 @@ SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
 CONTAGENS = [
     ("silver.ga4_eventos (total)", "SELECT count(*) FROM silver.ga4_eventos;"),
     ("silver.ga4_eventos (válido)", "SELECT count(*) FROM silver.ga4_eventos WHERE trafego_valido;"),
-    ("dias distintos", "SELECT count(DISTINCT event_date) FROM silver.ga4_eventos;"),
+    ("silver.ga4_eventos (dias)", "SELECT count(DISTINCT event_date) FROM silver.ga4_eventos;"),
+    ("silver.ga4_paineis (total)", "SELECT count(*) FROM silver.ga4_paineis;"),
+    ("silver.ga4_paineis (dias)", "SELECT count(DISTINCT event_date) FROM silver.ga4_paineis;"),
 ]
 
 

@@ -19,10 +19,11 @@ GA4_PROPERTY_ID = os.getenv("GA4_PROPERTY_ID")
 GA4_CREDENTIALS_PATH = str(_ROOT / os.getenv("GA4_CREDENTIALS_PATH", "config/credentials.json"))
 GA4_SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
 
-# Grão da extração — validado no teste 5 (588 linhas/dia). São 9 dimensões,
-# o máximo que o runReport aceita numa chamada. Origem de tráfego
-# (sessionDefaultChannelGroup) ficaria como um 2º relatório se necessário.
-DIMENSOES = [
+# São DOIS relatórios (ver testes/ACHADOS.md):
+#
+# Report A — uso do site. NÃO inclui a dimensão personalizada, então o GA4
+# serve das tabelas agregadas e o histórico alcança fev/2023.
+DIMENSOES_SITE = [
     "date",
     "hostName",
     "country",
@@ -31,8 +32,22 @@ DIMENSOES = [
     "browser",
     "operatingSystem",
     "eventName",
+]
+#
+# Report B — engajamento por painel. Inclui customEvent:nome_painel, o que faz
+# o GA4 cortar tudo antes da criação da dimensão (~jun/2026) e restringir aos
+# eventos de painel. Volume ínfimo hoje (~120 eventos).
+DIMENSOES_PAINEL = [
+    "date",
+    "hostName",
+    "country",
+    "city",
+    "deviceCategory",
+    "eventName",
     "customEvent:nome_painel",
 ]
+EVENTOS_PAINEL = ["painel_acessado", "painel_clicado"]
+
 METRICAS = [
     "eventCount",
     "sessions",
@@ -41,11 +56,12 @@ METRICAS = [
     "userEngagementDuration",
 ]
 
-# Datas de corte (ver testes/ACHADOS.md):
-#   - métricas de site (page_view, session_start...) existem desde fev/2023
-#   - a tag painel_acessado e a dimensão nome_painel entraram em 27/08/2026
+# Datas de corte:
+#   - Report A (uso de site): dados desde fev/2023
+#   - Report B (painéis): a dimensão nome_painel passou a retornar dados em
+#     jun/2026; eventos painel_acessado reais só a partir de 27/08/2026
 DATA_INICIO_HISTORICO = date(2023, 2, 1)
-DATA_INICIO_PAINEIS = date(2026, 8, 27)
+DATA_INICIO_PAINEIS = date(2026, 6, 1)
 
 # A GA4 processa dados com 24–48h de atraso; a janela incremental recua 3 dias.
 JANELA_SEGURANCA_DIAS = 3
