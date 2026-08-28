@@ -34,14 +34,17 @@ só na Gold.
 
 ## Estado atual
 
-Esqueleto montado. Extração validada por 5 testes de API documentados em
-[`testes/ACHADOS.md`](testes/ACHADOS.md). **Ainda não houve carga no banco.**
+Extração validada por 5 testes de API documentados em
+[`testes/ACHADOS.md`](testes/ACHADOS.md). Banco criado, schemas aplicados,
+`dim_painel` populada, carga de teste (ago/2026) validada nas views.
 
 - [x] Cliente GA4 (Service Account + retry + paginação)
 - [x] Scripts de teste exploratório (`testes/01`–`05`)
 - [x] Schemas SQL bronze / silver / gold + transformação
+- [x] `silver.dim_painel` a partir do CSV do time
 - [x] Orquestração (`extract_bronze`, `extract_incremental`, `pipeline`)
-- [ ] Criação do banco e carga histórica
+- [ ] Carga histórica completa (desde fev/2023)
+- [ ] Teste da carga incremental / `pipeline.py`
 - [ ] Dashboard Power BI
 - [ ] Agendamento no Task Scheduler
 - [ ] GTM: corrigir 48% de `nome_painel = (not set)` (fora deste repo)
@@ -56,7 +59,8 @@ Esqueleto montado. Extração validada por 5 testes de API documentados em
 | Bots atuais usam `browser = "Chrome"` / `OS = "Windows"` | Filtro por browser vazio **descartado** (não pega nada) |
 | China = ~97% das sessões, 0% engajamento, só no site institucional | Segmento inválido = `sessions >= 30 AND taxa de engajamento < 5%`; `gold.vw_qualidade_trafego` monitora |
 | Métricas de sessão/usuário repetem em cada linha de `eventName` | Gold lê essas métricas só de `gold.vw_sessoes` (recorte `session_start`) |
-| `nome_painel` tem grafias livres e 48% `(not set)` | Normalização por regex na **Gold** (`silver.dim_painel`), ajustável sem reprocessar |
+| Os 18 painéis do Data Insights são todos distintos; o GTM manda o nome canônico | `silver.dim_painel` (dimensão descritiva, seed do CSV do time) + match exato na Gold; `dim_painel_alias` p/ drift |
+| 48% dos `painel_acessado` vêm com `nome_painel = (not set)` | contam como `painel = NULL`, fora do ranking; problema é de GTM (fora do repo) |
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
 | Histórico desde fev/2023; painéis só desde 27/08/2026 | `DATA_INICIO_HISTORICO` vs `DATA_INICIO_PAINEIS` em `config.py` |
 | Só 588 linhas/dia no grão completo | Uma chamada por dia/mês, paginação por offset como salvaguarda |
@@ -81,7 +85,8 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │ achatada e normalizada, TODAS as linhas       │
 │ coluna site (deriva de hostName)              │
 │ coluna trafego_valido (por segmento)          │
-│ silver.dim_painel — mapa de grafias           │
+│ silver.dim_painel — dimensão dos 18 painéis    │
+│ silver.dim_painel_alias — apelidos GA4→painel  │
 └──────────────────────────────────────────────┘
         │  WHERE trafego_valido + normalização de painel
         ▼
@@ -120,13 +125,13 @@ entraria como um segundo relatório se necessário.
 marketing-analytics/
 ├── config/
 │   └── credentials.json          Service Account (gitignored)
+├── data/                         CSVs do time, ex. painéis (gitignored)
 ├── src/
 │   ├── config.py                 DB + constantes da API + datas de corte
 │   ├── db.py                     get_connection()
 │   ├── ga4_client.py             auth SA, runReport, paginação, retry
-│   ├── paineis.py                mapa grafia → nome canônico (seed da dim_painel)
 │   ├── setup_db.py               aplica os 3 schemas
-│   ├── load_dimensoes.py         popula silver.dim_painel
+│   ├── load_dimensoes.py         aplica sql/seed_dim_painel.sql
 │   ├── load_bronze.py            grava snapshot diário na bronze
 │   ├── load_silver.py            executa a transformação bronze → silver
 │   ├── extract_bronze.py         carga histórica (mês a mês)
@@ -136,6 +141,7 @@ marketing-analytics/
 │   ├── schema_bronze.sql
 │   ├── schema_silver.sql
 │   ├── schema_gold.sql
+│   ├── seed_dim_painel.sql       snapshot dos 18 painéis (do CSV do time)
 │   └── transform_bronze_to_silver.sql
 ├── testes/                       scripts exploratórios + ACHADOS.md
 ├── readme_previo.md              desenho original (histórico — superado por este)
@@ -168,8 +174,12 @@ pip install -r requirements.txt
 psql -U postgres -c "CREATE DATABASE abcs_marketing_analytics;"
 cd src
 python setup_db.py          # schemas bronze, silver, gold
-python load_dimensoes.py    # popula silver.dim_painel
+python load_dimensoes.py    # aplica sql/seed_dim_painel.sql (18 painéis)
 ```
+
+`sql/seed_dim_painel.sql` é o snapshot versionado de
+`data/ABCS Data Insights - Painéis.csv` (mantido pelo time, fora do git).
+Ao mudar os painéis, editar o seed e rodar `load_dimensoes.py` de novo.
 
 ---
 
@@ -207,7 +217,9 @@ grava na bronze, re-aplica a silver e confere as views gold. Loga em
   sempre as views Gold (já filtram `trafego_valido`).
 - `nome_painel` só existe desde **27/08/2026**; eventos anteriores retornam
   `(not set)`.
-- Ao surgir um painel novo, adicionar o mapeamento em `src/paineis.py` e
-  rodar `load_dimensoes.py` — não precisa reprocessar a extração.
-  `gold.vw_paineis_sem_mapeamento` lista as grafias ainda não mapeadas.
+- Ao surgir um painel novo (ou mudar a classificação), editar
+  `sql/seed_dim_painel.sql` a partir do CSV do time e rodar `load_dimensoes.py`
+  — não reprocessa a extração. Se o GTM mandar uma grafia diferente do nome
+  canônico, adicionar linha em `silver.dim_painel_alias` (no mesmo seed).
+  `gold.vw_paineis_sem_mapeamento` lista as grafias ainda sem correspondência.
 - A GA4 processa dados com 24–48h de atraso; a janela incremental já recua 3 dias.

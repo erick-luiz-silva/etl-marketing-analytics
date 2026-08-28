@@ -40,33 +40,34 @@ SELECT
 FROM silver.ga4_eventos
 WHERE event_name = 'session_start';
 
--- Resolve a grafia crua de nome_painel para o rótulo canônico. Quando mais de
--- um termo casa, vence o mais longo; se nada casa, mantém a grafia crua
--- (exceto '(not set)', que vira NULL).
+-- Resolve a grafia de nome_painel para o painel canônico: match exato em
+-- silver.dim_painel.painel, senão via silver.dim_painel_alias. Grafia sem
+-- correspondência (e ≠ '(not set)') fica com painel = NULL e aparece em
+-- gold.vw_paineis_sem_mapeamento.
 CREATE VIEW gold.vw_painel_normalizado AS
 SELECT
     e.id_evento,
     e.nome_painel_raw,
-    COALESCE(
-        (
-            SELECT p.rotulo
-            FROM silver.dim_painel p
-            WHERE p.ativo AND e.nome_painel_raw ~* p.termo
-            ORDER BY length(p.termo) DESC
-            LIMIT 1
-        ),
-        NULLIF(e.nome_painel_raw, '(not set)')
-    ) AS painel
+    COALESCE(d.painel, da.painel) AS painel
 FROM silver.ga4_eventos e
+LEFT JOIN silver.dim_painel d
+    ON d.ativo AND d.painel = e.nome_painel_raw
+LEFT JOIN silver.dim_painel_alias a
+    ON a.alias = e.nome_painel_raw
+LEFT JOIN silver.dim_painel da
+    ON da.ativo AND da.painel = a.painel
 WHERE e.event_name IN ('painel_acessado', 'painel_clicado');
 
--- Ranking de painéis (Data Insights) — só tráfego válido.
+-- Ranking de painéis de dados (Data Insights) — só tráfego válido.
 -- Grão: (data, painel, event_name) — event_name fixo no grupo, então as
--- métricas de sessão não cruzam eventos.
+-- métricas de sessão não cruzam eventos. Traz os atributos de dim_painel.
 CREATE VIEW gold.vw_paineis_ranking AS
 SELECT
     e.event_date,
-    n.painel,
+    d.painel,
+    d.ordem_menu,
+    d.tema,
+    d.hierarquia,
     e.event_name,
     SUM(e.event_count)                                                   AS acessos,
     SUM(e.sessions)                                                      AS sessoes,
@@ -75,16 +76,17 @@ SELECT
     ROUND(SUM(e.user_engagement_seconds) / NULLIF(SUM(e.sessions), 0), 1) AS tempo_medio_seg
 FROM silver.ga4_eventos e
 JOIN gold.vw_painel_normalizado n ON n.id_evento = e.id_evento
+JOIN silver.dim_painel d ON d.painel = n.painel AND d.tipo = 'painel'
 WHERE e.trafego_valido
-  AND n.painel IS NOT NULL
-GROUP BY 1, 2, 3;
+GROUP BY 1, 2, 3, 4, 5, 6;
 
 -- Engajamento por dispositivo (Data Insights). event_name no grão para não
 -- somar painel_acessado + painel_clicado da mesma sessão.
 CREATE VIEW gold.vw_engajamento_dispositivo AS
 SELECT
     e.event_date,
-    n.painel,
+    d.painel,
+    d.tema,
     e.event_name,
     e.device_category,
     SUM(e.sessions)                AS sessoes,
@@ -93,9 +95,9 @@ SELECT
     SUM(e.user_engagement_seconds) AS tempo_engajamento_s
 FROM silver.ga4_eventos e
 JOIN gold.vw_painel_normalizado n ON n.id_evento = e.id_evento
+JOIN silver.dim_painel d ON d.painel = n.painel AND d.tipo = 'painel'
 WHERE e.trafego_valido
-  AND n.painel IS NOT NULL
-GROUP BY 1, 2, 3, 4;
+GROUP BY 1, 2, 3, 4, 5;
 
 -- Eventos do site institucional. Só contagem de eventos + usuários; sem
 -- coluna de sessões (viria inflada). event_name está no grão.
@@ -139,18 +141,16 @@ SELECT
 FROM gold.vw_sessoes s
 GROUP BY 1, 2, 3;
 
--- Auditoria: grafias de nome_painel que não bateram em nenhum termo de
--- silver.dim_painel — usada para descobrir mapeamentos faltantes.
+-- Auditoria: grafias de nome_painel sem correspondência em dim_painel nem
+-- dim_painel_alias — cada uma precisa de um apelido novo (ou é painel novo
+-- que falta no seed). '(not set)' fica de fora (é problema de GTM, não de mapa).
 CREATE VIEW gold.vw_paineis_sem_mapeamento AS
 SELECT
-    e.nome_painel_raw,
+    n.nome_painel_raw,
     SUM(e.event_count) AS eventos
-FROM silver.ga4_eventos e
-WHERE e.event_name IN ('painel_acessado', 'painel_clicado')
-  AND e.nome_painel_raw <> '(not set)'
-  AND NOT EXISTS (
-      SELECT 1 FROM silver.dim_painel p
-      WHERE p.ativo AND e.nome_painel_raw ~* p.termo
-  )
+FROM gold.vw_painel_normalizado n
+JOIN silver.ga4_eventos e ON e.id_evento = n.id_evento
+WHERE n.painel IS NULL
+  AND n.nome_painel_raw <> '(not set)'
 GROUP BY 1
 ORDER BY 2 DESC;

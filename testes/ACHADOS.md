@@ -52,7 +52,7 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
    - Descartado o filtro `browser != ''` do readme (inútil — bots são "Chrome"/"Windows").
    - Tempo de engajamento sozinho não serve: linhas de `user_engagement` da China têm tempo residual > 0 com 0 sessões engajadas.
    - Métricas de sessão/usuário (`sessions`, `engagedSessions`, `activeUsers`) **repetem em cada linha de `eventName`** no runReport → só podem ser somadas num recorte de 1 evento. Gold usa `gold.vw_sessoes` (recorte `session_start`) para essas métricas.
-2. **Normalização de `nome_painel`** vai para a Gold (`dim_painel` + view), não `CASE WHEN` na Silver — mesmo princípio das keywords no projeto de proposições. Grafias precisam ser remapeadas com base nos dados reais, não no readme.
+2. **`nome_painel`**: os 18 painéis do Data Insights são **todos distintos** (`Cenário Empresarial` ≠ `Cenário Empresarial - Evolução` etc.). O time mantém um CSV com a lista + classificação (tema, hierarquia, público); virou `sql/seed_dim_painel.sql` (`silver.dim_painel`). O GTM manda o nome canônico → **match exato** na Gold (`gold.vw_painel_normalizado`), com `silver.dim_painel_alias` para exceções/drift. `Comércio Exterior - Exportações/Importações` do CSV = 1 painel `Comércio Exterior`. `Tutorial` = `tipo='auxiliar'` (fora do ranking). CSV fica fora do git.
 3. **Bronze** = payload JSON cru append-only + `data_extracao` (padrão proposições), não colunas tipadas.
 4. **Silver** = tabela fixa + `INSERT ... ON CONFLICT` idempotente, não `CREATE TABLE AS`.
 5. **Tabela de controle** de janela incremental (equivalente a `bronze.controle_execucao`).

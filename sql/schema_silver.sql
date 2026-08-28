@@ -43,12 +43,27 @@ CREATE INDEX IF NOT EXISTS ix_silver_ga4_eventos_event_name
 CREATE INDEX IF NOT EXISTS ix_silver_ga4_eventos_valido
     ON silver.ga4_eventos (trafego_valido);
 
--- Tabela de configuração: mapeamento de grafias de nome_painel -> nome canônico.
--- 'termo' é fragmento de regex (~*) aplicado sobre nome_painel_raw na gold.
--- Populada por src/load_dimensoes.py a partir de src/paineis.py.
+-- Dimensão descritiva dos painéis do ABCS Data Insights. Cada painel é
+-- distinto (não são variações de grafia). Populada por src/load_dimensoes.py
+-- a partir de sql/seed_dim_painel.sql, que é o snapshot versionado do CSV
+-- mantido pelo time (data/ABCS Data Insights - Painéis.csv, fora do git).
+--   tipo = 'painel'   -> painel de dados (entra no ranking)
+--   tipo = 'auxiliar' -> item de navegação (ex.: Tutorial)
 CREATE TABLE IF NOT EXISTS silver.dim_painel (
-    id_painel SERIAL PRIMARY KEY,
-    termo     VARCHAR(120) UNIQUE NOT NULL,
-    rotulo    VARCHAR(120) NOT NULL,
-    ativo     BOOLEAN NOT NULL DEFAULT true
+    id_painel         SERIAL PRIMARY KEY,
+    painel            VARCHAR(120) UNIQUE NOT NULL,   -- nome canônico
+    ordem_menu        INT,
+    tema              VARCHAR(80),
+    hierarquia        VARCHAR(80),
+    publico_principal VARCHAR(160),
+    tipo              VARCHAR(20) NOT NULL DEFAULT 'painel',
+    ativo             BOOLEAN NOT NULL DEFAULT true
+);
+
+-- Apelidos: grafias vindas do GA4 que não batem exatamente com dim_painel.painel.
+-- Hoje vazia — os nomes do GTM coincidem com os canônicos. Serve para absorver
+-- drift futuro sem reprocessar. Grafias órfãs aparecem em gold.vw_paineis_sem_mapeamento.
+CREATE TABLE IF NOT EXISTS silver.dim_painel_alias (
+    alias  VARCHAR(200) PRIMARY KEY,
+    painel VARCHAR(120) NOT NULL REFERENCES silver.dim_painel (painel)
 );
