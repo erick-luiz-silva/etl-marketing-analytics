@@ -84,12 +84,14 @@ painéis com custom dim, filtrado a eventos de painel).
 1. **Filtro de bot**: coluna `trafego_valido` na Silver (filtrada na Gold), decidida **por segmento** (dia × host × geo × device × browser × OS) a partir da linha `session_start` e propagada aos demais eventos do segmento. Regra: vale se `engaged_sessions > 0` **e** não é blob de bot (`sessions >= 30 AND taxa_engajamento < 5%`). A onda da China aparece como 1 segmento/dia de ~3.000 sessões com 3 engajadas (0,09%) — excluído; segmentos pequenos com baixa taxa são preservados (usuários reais navegando de leve). Limiares heurísticos, revisar com mais histórico.
    - Descartado o filtro `browser != ''` do readme (inútil — bots são "Chrome"/"Windows").
    - Tempo de engajamento sozinho não serve: linhas de `user_engagement` da China têm tempo residual > 0 com 0 sessões engajadas.
-   - Métricas de sessão/usuário (`sessions`, `engagedSessions`, `activeUsers`) **repetem em cada linha de `eventName`** no runReport → só podem ser somadas num recorte de 1 evento. Gold usa `gold.vw_sessoes` (recorte `session_start`) para essas métricas.
+   - Métricas de sessão/usuário (`sessions`, `engagedSessions`, `activeUsers`) **repetem em cada linha de `eventName`** no runReport → só podem ser somadas num recorte de 1 evento.
+   - **Mas cada métrica tem seu evento de origem**: `sessions/engaged/users` são consistentes em `session_start`; `userEngagementDuration` só acumula em `user_engagement` (é ~0 em `session_start`/`page_view`/`first_visit`). `gold.vw_sessoes` faz `SUM(...) FILTER (WHERE event_name = <evento certo>)` por métrica. `userEngagementDuration` do runReport **já vem em segundos** — não há conversão de ms no Python (`load_bronze.py` não converte nada, só grava o JSON cru).
 2. **`nome_painel`**: os 18 painéis do Data Insights são **todos distintos** (`Cenário Empresarial` ≠ `Cenário Empresarial - Evolução` etc.). O time mantém um CSV com a lista + classificação (tema, hierarquia, público); virou `sql/seed_dim_painel.sql` (`silver.dim_painel`). O GTM manda o nome canônico → **match exato** na Gold (`gold.vw_painel_normalizado`), com `silver.dim_painel_alias` para exceções/drift. `Comércio Exterior - Exportações/Importações` do CSV = 1 painel `Comércio Exterior`. `Tutorial` = `tipo='auxiliar'` (fora do ranking). CSV fica fora do git.
 3. **Dois relatórios**: `bronze.ga4_site_raw` (Report A, fev/2023+) e
    `bronze.ga4_paineis_raw` (Report B, jun/2026+, filtrado a `painel_acessado`/
    `painel_clicado`). Silver: `silver.ga4_eventos` e `silver.ga4_paineis`.
    `controle_execucao` tem coluna `relatorio` ('site'|'painel').
+   Grão geo: `country, region, city` (`region` = estado, GA4 devolve "State of ...").
 4. **Bronze** = payload JSON cru append-only (1 linha/dia), não colunas tipadas.
 5. **Silver** = "apaga o dia e reinsere" (idempotente), não `CREATE TABLE AS`.
 6. **`ga4_paineis` sem `trafego_valido`**: abcsdata não tem onda de bots e a

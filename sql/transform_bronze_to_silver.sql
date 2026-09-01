@@ -20,6 +20,7 @@ expandido AS (
         CASE WHEN elem->>'hostName' ILIKE '%abcsdata%'
              THEN 'Data Insights' ELSE 'Institucional' END            AS site,
         COALESCE(NULLIF(elem->>'country', ''), '(not set)')           AS country,
+        COALESCE(NULLIF(elem->>'region', ''), '(not set)')            AS region,
         COALESCE(NULLIF(elem->>'city', ''), '(not set)')             AS city,
         COALESCE(NULLIF(elem->>'deviceCategory', ''), '(not set)')   AS device_category,
         COALESCE(NULLIF(elem->>'browser', ''), '(not set)')         AS browser,
@@ -39,7 +40,7 @@ expandido AS (
 -- (>= 30) com taxa de engajamento quase nula (< 5%). Limiares heurísticos.
 validade AS (
     SELECT
-        event_date, hostname, country, city, device_category, browser, operating_system,
+        event_date, hostname, country, region, city, device_category, browser, operating_system,
         COALESCE(
             bool_or(
                 engaged_sessions > 0
@@ -48,22 +49,22 @@ validade AS (
             bool_or(engaged_sessions > 0)
         ) AS trafego_valido
     FROM expandido
-    GROUP BY 1, 2, 3, 4, 5, 6, 7
+    GROUP BY 1, 2, 3, 4, 5, 6, 7, 8
 )
 INSERT INTO silver.ga4_eventos (
-    event_date, hostname, site, country, city, device_category, browser,
+    event_date, hostname, site, country, region, city, device_category, browser,
     operating_system, event_name, event_count, sessions, engaged_sessions,
     active_users, user_engagement_seconds, trafego_valido, data_extracao
 )
 SELECT
-    x.event_date, x.hostname, x.site, x.country, x.city, x.device_category,
+    x.event_date, x.hostname, x.site, x.country, x.region, x.city, x.device_category,
     x.browser, x.operating_system, x.event_name, x.event_count, x.sessions,
     x.engaged_sessions, x.active_users, x.user_engagement_seconds,
     COALESCE(v.trafego_valido, x.engaged_sessions > 0),
     x.data_extracao
 FROM expandido x
 LEFT JOIN validade v USING
-    (event_date, hostname, country, city, device_category, browser, operating_system);
+    (event_date, hostname, country, region, city, device_category, browser, operating_system);
 
 -- =====================================================================
 -- Report B -> silver.ga4_paineis
@@ -77,7 +78,7 @@ WITH ultimo_snapshot AS (
     ORDER BY event_date, data_extracao DESC
 )
 INSERT INTO silver.ga4_paineis (
-    event_date, hostname, site, country, city, device_category, event_name,
+    event_date, hostname, site, country, region, city, device_category, event_name,
     nome_painel_raw, event_count, sessions, engaged_sessions, active_users,
     user_engagement_seconds, data_extracao
 )
@@ -87,6 +88,7 @@ SELECT
     CASE WHEN elem->>'hostName' ILIKE '%abcsdata%'
          THEN 'Data Insights' ELSE 'Institucional' END,
     COALESCE(NULLIF(elem->>'country', ''), '(not set)'),
+    COALESCE(NULLIF(elem->>'region', ''), '(not set)'),
     COALESCE(NULLIF(elem->>'city', ''), '(not set)'),
     COALESCE(NULLIF(elem->>'deviceCategory', ''), '(not set)'),
     elem->>'eventName',

@@ -19,15 +19,23 @@ DROP VIEW IF EXISTS gold.vw_sessoes;
 -- Uso do site (silver.ga4_eventos)
 -- =====================================================================
 
--- Base de sessões: recorte onde as métricas de sessão/usuário são confiáveis
--- (uma linha por segmento, sem repetição por eventName).
+-- Base de sessões: uma linha por segmento, cada métrica lida do eventName certo.
+-- No runReport a métrica se repete em cada linha de eventName, MAS não com o
+-- mesmo valor: sessions/engaged/users são consistentes na linha session_start;
+-- userEngagementDuration só acumula na linha user_engagement (é ~0 em
+-- session_start / page_view / first_visit — daí o "98s para 97k sessões").
+-- Por isso cada métrica sai de um FILTER no seu evento de origem.
 CREATE VIEW gold.vw_sessoes AS
 SELECT
-    event_date, site, hostname, country, city, device_category,
+    event_date, site, hostname, country, region, city, device_category,
     browser, operating_system, trafego_valido,
-    sessions, engaged_sessions, active_users, user_engagement_seconds
+    SUM(sessions)         FILTER (WHERE event_name = 'session_start')    AS sessions,
+    SUM(engaged_sessions) FILTER (WHERE event_name = 'session_start')    AS engaged_sessions,
+    SUM(active_users)     FILTER (WHERE event_name = 'session_start')    AS active_users,
+    COALESCE(SUM(user_engagement_seconds) FILTER (WHERE event_name = 'user_engagement'), 0)
+                                                                        AS user_engagement_seconds
 FROM silver.ga4_eventos
-WHERE event_name = 'session_start';
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10;
 
 -- Visão consolidada dos dois sites.
 CREATE VIEW gold.vw_site_overview AS
@@ -36,13 +44,14 @@ SELECT
     s.site,
     s.device_category,
     s.country,
+    s.region,
     SUM(s.active_users)            AS usuarios,
     SUM(s.sessions)                AS sessoes,
     SUM(s.engaged_sessions)        AS sessoes_engajadas,
     SUM(s.user_engagement_seconds) AS tempo_engajamento_s
 FROM gold.vw_sessoes s
 WHERE s.trafego_valido
-GROUP BY 1, 2, 3, 4;
+GROUP BY 1, 2, 3, 4, 5;
 
 -- Eventos do site institucional. Só contagem de eventos + usuários; event_name
 -- no grão (sem somar métrica de sessão entre eventos).
@@ -51,13 +60,14 @@ SELECT
     e.event_date,
     e.event_name,
     e.country,
+    e.region,
     e.device_category,
     SUM(e.event_count)  AS eventos,
     SUM(e.active_users) AS usuarios
 FROM silver.ga4_eventos e
 WHERE e.site = 'Institucional'
   AND e.trafego_valido
-GROUP BY 1, 2, 3, 4;
+GROUP BY 1, 2, 3, 4, 5;
 
 -- Auditoria de qualidade: quanto tráfego foi classificado como robótico.
 -- NÃO usar como métrica de negócio — serve para monitorar o filtro.
@@ -66,10 +76,11 @@ SELECT
     s.event_date,
     s.site,
     s.country,
+    s.region,
     SUM(s.sessions) FILTER (WHERE s.trafego_valido)     AS sessoes_validas,
     SUM(s.sessions) FILTER (WHERE NOT s.trafego_valido) AS sessoes_descartadas
 FROM gold.vw_sessoes s
-GROUP BY 1, 2, 3;
+GROUP BY 1, 2, 3, 4;
 
 -- =====================================================================
 -- Painéis do Data Insights (silver.ga4_paineis)

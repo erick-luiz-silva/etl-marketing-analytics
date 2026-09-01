@@ -39,8 +39,14 @@ ON CONFLICT (painel) DO UPDATE SET
     tipo              = EXCLUDED.tipo,
     ativo             = true;
 
--- Apelidos GA4 -> painel canônico. Vazio hoje (nomes do GTM == canônicos).
--- Exemplo de uso futuro:
---   INSERT INTO silver.dim_painel_alias (alias, painel)
---   VALUES ('Comercio Exterior', 'Comércio Exterior')
---   ON CONFLICT (alias) DO UPDATE SET painel = EXCLUDED.painel;
+-- Apelidos GA4 -> painel canônico. Grafias que o GTM manda diferente do nome
+-- canônico (surgem em gold.vw_paineis_sem_mapeamento). Confirmados 2026-08-31.
+INSERT INTO silver.dim_painel_alias (alias, painel) VALUES
+    ('Cotações Suínos CEPEA', 'Cotações Suínos - CEPEA'),   -- sem hífen
+    ('Cotações Insumos',      'Cotações - Insumos'),         -- sem hífen
+    ('Perfil',                'Emprego - Perfil'),           -- GTM manda só o rótulo-folha
+    ('Movimentação',          'Emprego - Movimentação')
+ON CONFLICT (alias) DO UPDATE SET painel = EXCLUDED.painel;
+
+-- Deliberadamente NÃO mapeado: 'Fale com a ABCS' (item de contato, não é painel).
+-- Segue aparecendo em gold.vw_paineis_sem_mapeamento — ok, é sinal de auditoria.

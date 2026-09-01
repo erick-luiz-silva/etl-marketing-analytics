@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS silver.ga4_eventos (
     hostname                VARCHAR(120) NOT NULL,
     site                    VARCHAR(20)  NOT NULL,   -- 'Data Insights' | 'Institucional'
     country                 VARCHAR(100) NOT NULL,
+    region                  VARCHAR(120) NOT NULL,   -- estado/província (GA4: "State of ...")
     city                    VARCHAR(120) NOT NULL,
     device_category         VARCHAR(20)  NOT NULL,
     browser                 VARCHAR(60)  NOT NULL,
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS silver.ga4_paineis (
     hostname                VARCHAR(120) NOT NULL,
     site                    VARCHAR(20)  NOT NULL,
     country                 VARCHAR(100) NOT NULL,
+    region                  VARCHAR(120) NOT NULL,
     city                    VARCHAR(120) NOT NULL,
     device_category         VARCHAR(20)  NOT NULL,
     event_name              VARCHAR(80)  NOT NULL,   -- painel_acessado | painel_clicado

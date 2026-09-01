@@ -43,11 +43,12 @@ Extração validada por 5 testes de API documentados em
 - [x] Schemas SQL bronze / silver / gold + transformação
 - [x] `silver.dim_painel` a partir do CSV do time
 - [x] Orquestração (`extract_bronze`, `extract_incremental`, `pipeline`)
-- [ ] Carga histórica completa (desde fev/2023)
-- [ ] Teste da carga incremental / `pipeline.py`
-- [ ] Dashboard Power BI
+- [x] Carga histórica completa (site desde fev/2023; painéis desde jun/2026)
+- [x] Carga incremental (`pipeline.py`) testada — janela D-3 → ontem
+- [ ] Dashboard Power BI (sobre as views do Report A)
 - [ ] Agendamento no Task Scheduler
-- [ ] GTM: corrigir 48% de `nome_painel = (not set)` (fora deste repo)
+- [ ] GTM: `nome_painel = (not set)` + estabilizar grafias dos painéis (fora deste repo)
+- [ ] Painéis: registrar `redirect_url`/`pagina`, modelar `origem`, deduplicar (futuro)
 
 ---
 
@@ -111,12 +112,16 @@ GA4 Data API  (propriedade 353835454, Service Account)
 
 ### Grão dos relatórios
 
-**Report A (site):** `date, hostName, country, city, deviceCategory, browser,
-operatingSystem, eventName`. Serve das tabelas agregadas do GA4 → alcança fev/2023.
+**Report A (site):** `date, hostName, country, region, city, deviceCategory,
+browser, operatingSystem, eventName` (9 = máximo). Serve das tabelas agregadas
+do GA4 → alcança fev/2023.
 
-**Report B (painéis):** `date, hostName, country, city, deviceCategory,
+**Report B (painéis):** `date, hostName, country, region, city, deviceCategory,
 eventName, customEvent:nome_painel`, filtrado a `painel_acessado` /
 `painel_clicado`. A dimensão personalizada limita o histórico a ~jun/2026.
+
+`region` = estado/província (o GA4 devolve "State of São Paulo", "Federal
+District", "Ceara" — grafia em inglês, mantida crua na silver).
 
 Métricas (ambos): `eventCount`, `sessions`, `engagedSessions`, `activeUsers`,
 `userEngagementDuration`.
