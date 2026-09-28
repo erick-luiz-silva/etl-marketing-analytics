@@ -77,6 +77,21 @@ Um relatório que inclui a dimensão personalizada `customEvent:nome_painel`
 → **Dois relatórios / duas tabelas** (Report A site sem custom dim; Report B
 painéis com custom dim, filtrado a eventos de painel).
 
+## Teste 6 — Frescor dos dados (data freshness) · `teste.py`
+Medido em 02/09/2026 09:58 (horário de Brasília):
+
+- **`metadata.timeZone` = America/Sao_Paulo** — "ontem" da API = ontem em Brasília, sem conversão.
+- **Defasagem de processamento ~22h**: às 10h de 02/09 a API só tinha eventos até
+  01/09 12:23. Ontem (01/09) estava ~10% carregado (1.255 eventos vs ~12k de um dia cheio).
+- Neste ritmo, **D-1 só fecha por volta do meio-dia do dia seguinte**. Regra oficial
+  do GA4: até 48h para ser definitivo. **Alvo confiável de carga = D-2.**
+- `dataLossFromGapsTimestamp` ausente → sem buracos de coleta.
+- Implicação: `pipeline.py` às 06:00 pega um D-1 parcial, MAS a janela D-3 no início
+  da extração re-puxa e corrige D-1/D-2/D-3 nas execuções seguintes (auto-cura em 1–2 dias).
+  Para D-1 mais cheio no mesmo dia, agendar ~15:00. No dashboard, marcar os 2 últimos
+  dias como provisórios.
+- `teste.py` (não commitado) roda esse diagnóstico sob demanda.
+
 ---
 
 ## Consequências para o desenho (vs readme_previo)

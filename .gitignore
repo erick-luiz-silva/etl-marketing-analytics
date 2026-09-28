@@ -8,3 +8,12 @@ logs/
 *.log
 *.csv
 *.bat
+# Power BI
+BI/
+
+# Relatório: saídas geradas, templates e imagens
+report/*.html
+report/*.pdf
+report/*.png
+report/*.txt
+report/logo_abcs_png/
