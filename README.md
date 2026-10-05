@@ -45,8 +45,10 @@ Extração validada por 5 testes de API documentados em
 - [x] Orquestração (`extract_bronze`, `extract_incremental`, `pipeline`)
 - [x] Carga histórica completa (site desde fev/2023; painéis desde jun/2026)
 - [x] Carga incremental (`pipeline.py`) testada — janela D-3 → ontem
-- [ ] Dashboard Power BI (sobre as views do Report A)
-- [ ] Agendamento no Task Scheduler
+- [x] Usuários ativos DAU/WAU/MAU (Report C, teste 7)
+- [x] Relatório semanal (`report/`) com usuários e médias + trava de semana incompleta
+- [x] Dashboard Power BI (PBIP versionado em `BI/`) — correções do modelo em andamento
+- [x] Agendamento no Task Scheduler (roda na cópia Windows — ver "Execução")
 - [ ] GTM: `nome_painel = (not set)` + estabilizar grafias dos painéis (fora deste repo)
 - [ ] Painéis: registrar `redirect_url`/`pagina`, modelar `origem`, deduplicar (futuro)
 
@@ -65,6 +67,8 @@ Extração validada por 5 testes de API documentados em
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
 | Incluir `customEvent:nome_painel` num relatório **corta o histórico** para ~jun/2026 (data de criação da dimensão) | **Dois relatórios**: Report A (site, sem a dimensão, desde fev/2023) e Report B (painéis, com a dimensão) |
 | Painéis só têm dados reais desde 27/08/2026 | `DATA_INICIO_HISTORICO` (fev/2023) vs `DATA_INICIO_PAINEIS` (jun/2026) em `config.py` |
+| Usuário não é aditivo entre dias; a soma por segmento fino infla +20–30% | **Report C**: `active1/7/28DayUsers` por data × host × país × dispositivo (infla ≤ 2%), regra de bot sobre a janela |
+| A propriedade recebe hits de hosts que não são da ABCS | `silver.fn_site()` com lista explícita; o resto vira `'Outros'` e sai da gold |
 
 ---
 
@@ -74,13 +78,16 @@ Extração validada por 5 testes de API documentados em
 GA4 Data API  (propriedade 353835454, Service Account)
         │
         ├── Report A (uso do site, sem custom dim)      ── desde fev/2023
-        └── Report B (painéis, com customEvent:nome_painel,
-                      filtrado a painel_acessado/clicado) ── desde jun/2026
+        ├── Report B (painéis, com customEvent:nome_painel,
+        │             filtrado a painel_acessado/clicado) ── desde jun/2026
+        └── Report C (usuários ativos 1/7/28 dias, por
+                      host × país × dispositivo)            ── desde fev/2023
         ▼
 ┌──────────────────────────────────────────────┐
 │ BRONZE   1 linha por dia, JSON cru, append-only│
 │  bronze.ga4_site_raw                           │
 │  bronze.ga4_paineis_raw                        │
+│  bronze.ga4_usuarios_raw                       │
 │  bronze.controle_execucao (col. relatorio)     │
 └──────────────────────────────────────────────┘
         │  substitui o dia inteiro (idempotente)
@@ -90,6 +97,7 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │  ga4_eventos   site: achatada, coluna site,    │
 │                coluna trafego_valido/segmento  │
 │  ga4_paineis   eventos de painel + nome_painel │
+│  ga4_usuarios  DAU/WAU/MAU + sessões por dia   │
 │  dim_painel        dimensão dos 18 painéis      │
 │  dim_painel_alias  apelidos GA4 → painel        │
 └──────────────────────────────────────────────┘
@@ -104,6 +112,7 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │           vw_paineis_ranking,                  │
 │           vw_engajamento_dispositivo,          │
 │           vw_paineis_sem_mapeamento (auditoria)│
+│  usuários: vw_usuarios_ativos (DAU/WAU/MAU)    │
 └──────────────────────────────────────────────┘
         │
         ▼
@@ -123,8 +132,14 @@ eventName, customEvent:nome_painel`, filtrado a `painel_acessado` /
 `region` = estado/província (o GA4 devolve "State of São Paulo", "Federal
 District", "Ceara" — grafia em inglês, mantida crua na silver).
 
-Métricas (ambos): `eventCount`, `sessions`, `engagedSessions`, `activeUsers`,
+Métricas (A e B): `eventCount`, `sessions`, `engagedSessions`, `activeUsers`,
 `userEngagementDuration`.
+
+**Report C (usuários):** `date, hostName, country, deviceCategory` com
+`active1DayUsers`, `active7DayUsers`, `active28DayUsers` (usuários únicos de
+1/7/28 dias até `date`), `sessions`, `engagedSessions`, `userEngagementDuration`.
+WAU = `active7DayUsers` do domingo (semana seg–dom); MAU = 28 dias móveis.
+Para um período, ler wau/mau do **último dia** — nunca somar entre dias.
 
 ---
 
@@ -153,7 +168,9 @@ marketing-analytics/
 │   ├── seed_dim_painel.sql       snapshot dos 18 painéis (do CSV do time)
 │   └── transform_bronze_to_silver.sql
 ├── testes/                       scripts exploratórios + ACHADOS.md
-├── readme_previo.md              desenho original (histórico — superado por este)
+├── report/                       relatório semanal (PDF + texto WhatsApp)
+├── BI/                           Power BI (PBIP: Report + SemanticModel)
+├── CHANGELOG.md                  mudanças relevantes de dados/modelo/entregáveis
 ├── .env.example
 └── requirements.txt
 ```
@@ -197,11 +214,15 @@ Ao mudar os painéis, editar o seed e rodar `load_dimensoes.py` de novo.
 ### Carga histórica (uma vez)
 
 ```powershell
-python extract_bronze.py     # site desde fev/2023 + painéis desde jun/2026
+python extract_bronze.py     # site e usuários desde fev/2023 + painéis desde jun/2026
 ```
 
-Flags: `--inicio-site`, `--inicio-painel`, `--fim` (ISO). Ao final já roda a
+Flags: `--inicio-site`, `--inicio-painel`, `--fim` (ISO), `--relatorios`
+(ex.: `--relatorios usuarios` para carregar só um). Ao final já roda a
 transformação da silver.
+
+A silver só reprocessa os dias com snapshot novo na bronze. Ao mudar uma regra
+de `sql/transform_bronze_to_silver.sql`: `python load_silver.py --completo`.
 
 ### Carga diária
 
@@ -213,12 +234,18 @@ Extrai a janela pendente (D-3 no mínimo, mais larga se ficou dias sem rodar),
 grava na bronze, re-aplica a silver e confere as views gold. Loga em
 `logs/pipeline.log`.
 
-### Task Scheduler
+### Produção (Task Scheduler)
 
-1. Nova tarefa → *ABCS Marketing Analytics — Carga Diária*
-2. Gatilho: todo dia às 06:00
-3. Ação: `…\venv\Scripts\python.exe …\src\pipeline.py`
-4. Marcar "Executar mesmo que o usuário não esteja conectado"
+O desenvolvimento é no WSL; a carga diária roda numa **cópia Windows do mesmo
+repositório** (`C:\Users\User\Desktop\erick\projetos\marketing-analytics`), tarefa
+`ScriptDiarioMonitoramento_Marketing` às 17:00 → `src\executar.bat` (Anaconda).
+
+- Deploy: `git push` no WSL → `git pull` na cópia Windows. Mudou schema SQL →
+  `python src\setup_db.py` lá também.
+- Na tarefa, marcar **"Executar a tarefa o mais cedo possível após uma
+  inicialização agendada ser perdida"** — sem isso, PC desligado às 17h = dia sem carga
+  (a janela incremental recupera depois, mas o relatório de segunda pode pegar a
+  semana incompleta).
 
 ---
 
