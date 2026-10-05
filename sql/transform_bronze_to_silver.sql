@@ -1,24 +1,35 @@
--- bronze -> silver. Estratégia "substitui o dia inteiro": para cada data
--- presente na bronze, apaga as linhas da silver e reinsere a partir do
--- snapshot mais recente. Idempotente.
+-- bronze -> silver. Estratégia "substitui o dia inteiro": para cada data cujo
+-- snapshot mais recente na bronze é mais novo que o que está na silver, apaga
+-- as linhas da silver e reinsere a partir desse snapshot. Idempotente.
+--
+-- Só os dias pendentes são reprocessados (antes era o histórico inteiro, todo
+-- dia). Para reprocessar tudo — ex.: mudou uma regra desta transformação —
+-- rodar `python load_silver.py --completo`, que esvazia a silver antes.
 
 -- =====================================================================
 -- Report A -> silver.ga4_eventos
 -- =====================================================================
-DELETE FROM silver.ga4_eventos
-WHERE event_date IN (SELECT DISTINCT event_date FROM bronze.ga4_site_raw);
+CREATE TEMP TABLE _dias_site ON COMMIT DROP AS
+SELECT b.event_date
+FROM bronze.ga4_site_raw b
+GROUP BY b.event_date
+HAVING max(b.data_extracao) > COALESCE(
+    (SELECT max(s.data_extracao) FROM silver.ga4_eventos s WHERE s.event_date = b.event_date),
+    '-infinity');
+
+DELETE FROM silver.ga4_eventos WHERE event_date IN (SELECT event_date FROM _dias_site);
 
 WITH ultimo_snapshot AS (
     SELECT DISTINCT ON (event_date) event_date, payload, data_extracao
     FROM bronze.ga4_site_raw
+    WHERE event_date IN (SELECT event_date FROM _dias_site)
     ORDER BY event_date, data_extracao DESC
 ),
 expandido AS (
     SELECT
         (elem->>'date')::date                                         AS event_date,
         elem->>'hostName'                                             AS hostname,
-        CASE WHEN elem->>'hostName' ILIKE '%abcsdata%'
-             THEN 'Data Insights' ELSE 'Institucional' END            AS site,
+        silver.fn_site(elem->>'hostName')                             AS site,
         COALESCE(NULLIF(elem->>'country', ''), '(not set)')           AS country,
         COALESCE(NULLIF(elem->>'region', ''), '(not set)')            AS region,
         COALESCE(NULLIF(elem->>'city', ''), '(not set)')             AS city,
@@ -69,12 +80,20 @@ LEFT JOIN validade v USING
 -- =====================================================================
 -- Report B -> silver.ga4_paineis
 -- =====================================================================
-DELETE FROM silver.ga4_paineis
-WHERE event_date IN (SELECT DISTINCT event_date FROM bronze.ga4_paineis_raw);
+CREATE TEMP TABLE _dias_painel ON COMMIT DROP AS
+SELECT b.event_date
+FROM bronze.ga4_paineis_raw b
+GROUP BY b.event_date
+HAVING max(b.data_extracao) > COALESCE(
+    (SELECT max(s.data_extracao) FROM silver.ga4_paineis s WHERE s.event_date = b.event_date),
+    '-infinity');
+
+DELETE FROM silver.ga4_paineis WHERE event_date IN (SELECT event_date FROM _dias_painel);
 
 WITH ultimo_snapshot AS (
     SELECT DISTINCT ON (event_date) event_date, payload, data_extracao
     FROM bronze.ga4_paineis_raw
+    WHERE event_date IN (SELECT event_date FROM _dias_painel)
     ORDER BY event_date, data_extracao DESC
 )
 INSERT INTO silver.ga4_paineis (
@@ -85,8 +104,7 @@ INSERT INTO silver.ga4_paineis (
 SELECT
     (elem->>'date')::date,
     elem->>'hostName',
-    CASE WHEN elem->>'hostName' ILIKE '%abcsdata%'
-         THEN 'Data Insights' ELSE 'Institucional' END,
+    silver.fn_site(elem->>'hostName'),
     COALESCE(NULLIF(elem->>'country', ''), '(not set)'),
     COALESCE(NULLIF(elem->>'region', ''), '(not set)'),
     COALESCE(NULLIF(elem->>'city', ''), '(not set)'),
@@ -98,5 +116,42 @@ SELECT
     (elem->>'engagedSessions')::bigint,
     (elem->>'activeUsers')::bigint,
     (elem->>'userEngagementDuration')::numeric,
+    s.data_extracao
+FROM ultimo_snapshot s, jsonb_array_elements(s.payload) elem;
+
+-- =====================================================================
+-- Report C -> silver.ga4_usuarios
+-- =====================================================================
+CREATE TEMP TABLE _dias_usuarios ON COMMIT DROP AS
+SELECT b.event_date
+FROM bronze.ga4_usuarios_raw b
+GROUP BY b.event_date
+HAVING max(b.data_extracao) > COALESCE(
+    (SELECT max(s.data_extracao) FROM silver.ga4_usuarios s WHERE s.event_date = b.event_date),
+    '-infinity');
+
+DELETE FROM silver.ga4_usuarios WHERE event_date IN (SELECT event_date FROM _dias_usuarios);
+
+WITH ultimo_snapshot AS (
+    SELECT DISTINCT ON (event_date) event_date, payload, data_extracao
+    FROM bronze.ga4_usuarios_raw
+    WHERE event_date IN (SELECT event_date FROM _dias_usuarios)
+    ORDER BY event_date, data_extracao DESC
+)
+INSERT INTO silver.ga4_usuarios (
+    event_date, hostname, site, country, device_category,
+    dau, wau, mau, sessions, engaged_sessions, data_extracao
+)
+SELECT
+    (elem->>'date')::date,
+    elem->>'hostName',
+    silver.fn_site(elem->>'hostName'),
+    COALESCE(NULLIF(elem->>'country', ''), '(not set)'),
+    COALESCE(NULLIF(elem->>'deviceCategory', ''), '(not set)'),
+    (elem->>'active1DayUsers')::bigint,
+    (elem->>'active7DayUsers')::bigint,
+    (elem->>'active28DayUsers')::bigint,
+    (elem->>'sessions')::bigint,
+    (elem->>'engagedSessions')::bigint,
     s.data_extracao
 FROM ultimo_snapshot s, jsonb_array_elements(s.payload) elem;

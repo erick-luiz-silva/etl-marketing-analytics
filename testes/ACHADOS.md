@@ -92,6 +92,42 @@ Medido em 02/09/2026 09:58 (horário de Brasília):
   dias como provisórios.
 - `teste.py` (não commitado) roda esse diagnóstico sob demanda.
 
+## Teste 7 — Usuários ativos (DAU / WAU / MAU) · `07_usuarios_ativos.py`
+Medido em 05/10/2026, semana 28/09–04/10:
+
+- Usuário **não é aditivo**: somar `activeUsers` de vários dias conta a mesma pessoa
+  várias vezes (o "usuários da semana" antigo do relatório era essa soma).
+- A Data API tem **`active1DayUsers` / `active7DayUsers` / `active28DayUsers`** —
+  usuários únicos da janela móvel terminando em `date`. Funcionam com a dimensão
+  `date` e o histórico alcança 2023.
+- **`active7DayUsers` no domingo = WAU seg–dom fechado**, exato (93 = 93 no Data
+  Insights; 28.653 = 28.653 no Institucional). MAU = 28 dias móveis (padrão GA4).
+- **Grão de segmento do Report A não serve**: a soma entre segmentos infla
+  **+20 a +31%** no Data Insights (o mesmo usuário muda de cidade/browser/OS na
+  janela) e 93% das linhas têm `sessions = 0` no dia → o flag diário de bot não se aplica.
+- **Grão host × país × dispositivo**: infla **≤ 2,2%**. Aceito.
+- **Bots**: o MAU bruto do Institucional é ~100 mil, quase tudo China (WAU 27.752,
+  taxa de engajamento 0,1%). Regra da silver aplicada às sessões **da janela** de cada
+  métrica (1/7/28 dias) por host × país × dispositivo → WAU válido 658, coerente com
+  o Brasil (459, 54% engajado).
+- DAU novo ≥ soma antiga de `active_users` válidos (ex.: 20 vs 13 no Data Insights em
+  28/09 — 20 = exato da API). O filtro antigo, por segmento fino, descartava usuários
+  reais que só não engajaram. Para **usuários**, vale o novo.
+
+→ **Report C** (`bronze.ga4_usuarios_raw` → `silver.ga4_usuarios` →
+`gold.vw_usuarios_ativos`). Para um período, ler wau/mau **do último dia**; nunca somar entre dias.
+
+## Achado lateral — hosts que não são da ABCS
+A propriedade recebe hits de outros hosts (`www.nomadesdigitais.com` 290 sessões em
+2023–24, `localhost`/`127.0.0.1` de teste, IPs, proxies). A silver classificava tudo
+que não fosse `abcsdata` como **Institucional**. Agora `silver.fn_site()` usa lista
+explícita; o resto vira `'Outros'` e a gold descarta.
+
+## Achado lateral — relatório gerado com semana incompleta
+O resumo de 14–20/09 foi gerado com dados só até 18/09 (não houve carga em 19 e
+20/09). Painéis saíram com 12/17/12 acessos contra 21/20/16 reais. O relatório agora
+recusa gerar se a semana não estiver completa na base (ver `report/README.md`).
+
 ---
 
 ## Consequências para o desenho (vs readme_previo)

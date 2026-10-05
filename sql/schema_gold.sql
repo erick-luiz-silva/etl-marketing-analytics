@@ -3,9 +3,12 @@
 --     métricas de sessão/usuário só a partir de gold.vw_sessoes (recorte
 --     session_start), porque no runReport elas se repetem em cada linha de eventName.
 --   - silver.ga4_paineis (Report B): normalização de nome_painel via silver.dim_painel.
+--   - silver.ga4_usuarios (Report C): DAU/WAU/MAU com regra de bot sobre a janela.
+--   - hosts que não são da ABCS (site = 'Outros', ver silver.fn_site) ficam de fora.
 
 CREATE SCHEMA IF NOT EXISTS gold;
 
+DROP VIEW IF EXISTS gold.vw_usuarios_ativos;
 DROP VIEW IF EXISTS gold.vw_qualidade_trafego;
 DROP VIEW IF EXISTS gold.vw_site_overview;
 DROP VIEW IF EXISTS gold.vw_institucional_eventos;
@@ -35,6 +38,7 @@ SELECT
     COALESCE(SUM(user_engagement_seconds) FILTER (WHERE event_name = 'user_engagement'), 0)
                                                                         AS user_engagement_seconds
 FROM silver.ga4_eventos
+WHERE site <> 'Outros'
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10;
 
 -- Visão consolidada dos dois sites.
@@ -127,6 +131,7 @@ SELECT
 FROM silver.ga4_paineis p
 JOIN gold.vw_painel_normalizado n ON n.id_painel_evento = p.id_painel_evento
 JOIN silver.dim_painel d ON d.painel = n.painel AND d.tipo = 'painel'
+WHERE p.site = 'Data Insights'
 GROUP BY 1, 2, 3, 4, 5, 6;
 
 -- Engajamento por dispositivo e painel (decisão de redesign mobile do readme).
@@ -144,6 +149,7 @@ SELECT
 FROM silver.ga4_paineis p
 JOIN gold.vw_painel_normalizado n ON n.id_painel_evento = p.id_painel_evento
 JOIN silver.dim_painel d ON d.painel = n.painel AND d.tipo = 'painel'
+WHERE p.site = 'Data Insights'
 GROUP BY 1, 2, 3, 4, 5;
 
 -- Auditoria: grafias de nome_painel sem correspondência em dim_painel nem
@@ -157,5 +163,48 @@ FROM gold.vw_painel_normalizado n
 JOIN silver.ga4_paineis p ON p.id_painel_evento = n.id_painel_evento
 WHERE n.painel IS NULL
   AND n.nome_painel_raw <> '(not set)'
+  AND p.site = 'Data Insights'
 GROUP BY 1
 ORDER BY 2 DESC;
+
+-- =====================================================================
+-- Usuários ativos (silver.ga4_usuarios)
+-- =====================================================================
+
+-- DAU / WAU / MAU de tráfego válido, por dia × site × país × dispositivo.
+-- dau/wau/mau = usuários únicos dos últimos 1/7/28 dias terminando em event_date
+-- (MAU = 28 dias móveis, padrão GA4; wau no domingo = WAU seg–dom fechado).
+-- Somar entre país/dispositivo infla ~2% (usuário que troca de linha na janela);
+-- somar entre DIAS é errado — para um período, ler o valor do último dia.
+--
+-- Regra de bot = mesma da silver (engajou E não é blob >= 30 sessões com < 5%
+-- de engajamento), mas aplicada às sessões da JANELA de cada métrica: um
+-- segmento entra no wau se suas sessões dos últimos 7 dias passam na regra.
+CREATE VIEW gold.vw_usuarios_ativos AS
+WITH janelas AS (
+    SELECT
+        event_date, site, hostname, country, device_category, dau, wau, mau,
+        sessions          AS ses_1d,
+        engaged_sessions  AS eng_1d,
+        SUM(sessions) OVER w7           AS ses_7d,
+        SUM(engaged_sessions) OVER w7   AS eng_7d,
+        SUM(sessions) OVER w28          AS ses_28d,
+        SUM(engaged_sessions) OVER w28  AS eng_28d
+    FROM silver.ga4_usuarios
+    WHERE site <> 'Outros'
+    WINDOW
+        w7  AS (PARTITION BY hostname, country, device_category ORDER BY event_date
+                RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW),
+        w28 AS (PARTITION BY hostname, country, device_category ORDER BY event_date
+                RANGE BETWEEN INTERVAL '27 days' PRECEDING AND CURRENT ROW)
+)
+SELECT
+    event_date,
+    site,
+    country,
+    device_category,
+    SUM(dau) FILTER (WHERE eng_1d  > 0 AND NOT (ses_1d  >= 30 AND eng_1d::numeric  / ses_1d  < 0.05)) AS dau,
+    SUM(wau) FILTER (WHERE eng_7d  > 0 AND NOT (ses_7d  >= 30 AND eng_7d::numeric  / ses_7d  < 0.05)) AS wau,
+    SUM(mau) FILTER (WHERE eng_28d > 0 AND NOT (ses_28d >= 30 AND eng_28d::numeric / ses_28d < 0.05)) AS mau
+FROM janelas
+GROUP BY 1, 2, 3, 4;

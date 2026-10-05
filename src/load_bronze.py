@@ -6,12 +6,13 @@ from collections import defaultdict
 _TABELAS = {
     "site": "bronze.ga4_site_raw",
     "painel": "bronze.ga4_paineis_raw",
+    "usuarios": "bronze.ga4_usuarios_raw",
 }
 
 
 def gravar_snapshot_diario(conn, relatorio, registros):
     """Agrupa `registros` (lista de dicts com chave 'date') por dia e grava
-    um snapshot por dia na tabela bronze do relatório ('site' | 'painel').
+    um snapshot por dia na tabela bronze do relatório ('site' | 'painel' | 'usuarios').
 
     Retorna {event_date: qtd_linhas}.
     """

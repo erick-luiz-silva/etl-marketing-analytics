@@ -1,9 +1,10 @@
 """Cliente da GA4 Data API v1beta.
 
-Autentica via Service Account (sem token manual, sem expiração) e expõe dois
+Autentica via Service Account (sem token manual, sem expiração) e expõe três
 relatórios (ver testes/ACHADOS.md):
-  - extrair_site(inicio, fim)    -> uso do site, sem dimensão personalizada
-  - extrair_paineis(inicio, fim) -> eventos de painel, com customEvent:nome_painel
+  - extrair_site(inicio, fim)     -> uso do site, sem dimensão personalizada
+  - extrair_paineis(inicio, fim)  -> eventos de painel, com customEvent:nome_painel
+  - extrair_usuarios(inicio, fim) -> usuários ativos de 1/7/28 dias (DAU/WAU/MAU)
 
 Ambos seguem a paginação por offset e devolvem linhas achatadas em dicts.
 """
@@ -17,11 +18,13 @@ import requests
 from config import (
     DIMENSOES_PAINEL,
     DIMENSOES_SITE,
+    DIMENSOES_USUARIOS,
     EVENTOS_PAINEL,
     GA4_CREDENTIALS_PATH,
     GA4_PROPERTY_ID,
     GA4_SCOPES,
     METRICAS,
+    METRICAS_USUARIOS,
 )
 
 _BASE_URL = "https://analyticsdata.googleapis.com/v1beta"
@@ -87,11 +90,11 @@ def _linhas_para_dicts(resposta):
     return registros
 
 
-def _extrair(dimensoes, inicio, fim, dimension_filter=None):
+def _extrair(dimensoes, inicio, fim, dimension_filter=None, metricas=METRICAS):
     base_payload = {
         "dateRanges": [{"startDate": inicio.isoformat(), "endDate": fim.isoformat()}],
         "dimensions": [{"name": d} for d in dimensoes],
-        "metrics": [{"name": m} for m in METRICAS],
+        "metrics": [{"name": m} for m in metricas],
         "keepEmptyRows": False,
         "limit": _PAGE_SIZE,
     }
@@ -130,9 +133,15 @@ def extrair_paineis(inicio, fim):
     return _extrair(DIMENSOES_PAINEL, inicio, fim, dimension_filter=filtro)
 
 
+def extrair_usuarios(inicio, fim):
+    """Report C — usuários ativos de 1/7/28 dias por data × host × país × dispositivo."""
+    return _extrair(DIMENSOES_USUARIOS, inicio, fim, metricas=METRICAS_USUARIOS)
+
+
 if __name__ == "__main__":
     from datetime import date, timedelta
 
     ontem = date.today() - timedelta(days=1)
     print(f"site   {ontem}: {len(extrair_site(ontem, ontem))} linhas")
     print(f"painel {ontem}: {len(extrair_paineis(ontem, ontem))} linhas")
+    print(f"usuarios {ontem}: {len(extrair_usuarios(ontem, ontem))} linhas")

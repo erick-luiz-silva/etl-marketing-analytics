@@ -11,12 +11,27 @@
 
 CREATE SCHEMA IF NOT EXISTS silver;
 
+-- Portal a partir do hostName. A propriedade GA4 também recebe hits de hosts
+-- que não são da ABCS (cópias do site, proxies, localhost de teste) -> 'Outros',
+-- que a gold descarta. Tradutor do Google (abcs-org-br.translate.goog) conta
+-- como o portal de origem.
+CREATE OR REPLACE FUNCTION silver.fn_site(hostname TEXT) RETURNS VARCHAR(20)
+LANGUAGE sql IMMUTABLE AS $$
+    SELECT CASE
+        WHEN hostname ILIKE 'abcsdata.abcs.org.br'
+          OR hostname ILIKE 'abcsdata-abcs-org-br.translate.goog'       THEN 'Data Insights'
+        WHEN hostname ILIKE ANY (ARRAY['abcs.org.br', 'www.abcs.org.br',
+                                       'abcs-org-br.translate.goog'])  THEN 'Institucional'
+        ELSE 'Outros'
+    END
+$$;
+
 -- Report A — uso do site (histórico desde fev/2023).
 CREATE TABLE IF NOT EXISTS silver.ga4_eventos (
     id_evento               BIGSERIAL PRIMARY KEY,
     event_date              DATE NOT NULL,
     hostname                VARCHAR(120) NOT NULL,
-    site                    VARCHAR(20)  NOT NULL,   -- 'Data Insights' | 'Institucional'
+    site                    VARCHAR(20)  NOT NULL,   -- 'Data Insights' | 'Institucional' | 'Outros'
     country                 VARCHAR(100) NOT NULL,
     region                  VARCHAR(120) NOT NULL,   -- estado/província (GA4: "State of ...")
     city                    VARCHAR(120) NOT NULL,
@@ -60,6 +75,26 @@ CREATE TABLE IF NOT EXISTS silver.ga4_paineis (
 );
 CREATE INDEX IF NOT EXISTS ix_silver_ga4_paineis_event_date ON silver.ga4_paineis (event_date);
 CREATE INDEX IF NOT EXISTS ix_silver_ga4_paineis_painel     ON silver.ga4_paineis (nome_painel_raw);
+
+-- Report C — usuários ativos (DAU/WAU/MAU). dau/wau/mau = usuários únicos dos
+-- últimos 1/7/28 dias terminando em event_date, por host × país × dispositivo.
+-- Sem trafego_valido: a regra de bot depende da janela (7/28 dias) e é aplicada
+-- na gold (gold.vw_usuarios_ativos) a partir de sessions/engaged_sessions diárias.
+CREATE TABLE IF NOT EXISTS silver.ga4_usuarios (
+    id_usuarios      BIGSERIAL PRIMARY KEY,
+    event_date       DATE NOT NULL,
+    hostname         VARCHAR(120) NOT NULL,
+    site             VARCHAR(20)  NOT NULL,
+    country          VARCHAR(100) NOT NULL,
+    device_category  VARCHAR(20)  NOT NULL,
+    dau              BIGINT,
+    wau              BIGINT,
+    mau              BIGINT,
+    sessions         BIGINT,
+    engaged_sessions BIGINT,
+    data_extracao    TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_silver_ga4_usuarios_event_date ON silver.ga4_usuarios (event_date);
 
 -- Dimensão descritiva dos painéis do ABCS Data Insights. Cada painel é
 -- distinto (não são variações de grafia). Populada por src/load_dimensoes.py

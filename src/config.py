@@ -58,6 +58,22 @@ METRICAS = [
     "userEngagementDuration",
 ]
 
+# Report C — usuários ativos (DAU/WAU/MAU). Usuário não é aditivo entre dias,
+# então usa as métricas de janela móvel da GA4: usuários únicos de 1/7/28 dias
+# terminando em `date` (active7DayUsers no domingo = WAU seg–dom exato).
+# Grão grosso (host × país × dispositivo): a soma entre linhas infla ≤ ~2%,
+# contra +20–30% no grão de segmento do Report A. sessions/engagedSessions
+# diárias vêm junto para a gold aplicar a regra de bot sobre a janela.
+# Ver testes/ACHADOS.md, teste 7.
+DIMENSOES_USUARIOS = ["date", "hostName", "country", "deviceCategory"]
+METRICAS_USUARIOS = [
+    "active1DayUsers",
+    "active7DayUsers",
+    "active28DayUsers",
+    "sessions",
+    "engagedSessions",
+]
+
 # Datas de corte:
 #   - Report A (uso de site): dados desde fev/2023
 #   - Report B (painéis): a dimensão nome_painel passou a retornar dados em
