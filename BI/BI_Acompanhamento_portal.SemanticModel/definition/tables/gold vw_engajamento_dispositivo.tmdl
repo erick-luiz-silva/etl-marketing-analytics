@@ -1,0 +1,117 @@
+table 'gold vw_engajamento_dispositivo'
+	lineageTag: dedbc7e0-3d2d-4385-857f-dd3ea59a402b
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 07620ff4-7739-4736-86dd-a695797f9d58
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column painel
+		dataType: string
+		lineageTag: 328b5187-5be4-4f9a-b91c-bd6ae7c04a75
+		summarizeBy: none
+		sourceColumn: painel
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column tema
+		dataType: string
+		lineageTag: b2b1a0b9-7c65-4c76-8b5a-d217f1f6c340
+		summarizeBy: none
+		sourceColumn: tema
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column event_name
+		dataType: string
+		lineageTag: c7ecbaf6-d1ff-475c-9b37-81e105b764c1
+		summarizeBy: none
+		sourceColumn: event_name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column device_category
+		dataType: string
+		lineageTag: a78fbecb-7d45-4686-9b96-37db7a051147
+		summarizeBy: none
+		sourceColumn: device_category
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column sessoes
+		dataType: double
+		lineageTag: 713046ad-f5f9-4897-b9a6-102d708c229b
+		summarizeBy: sum
+		sourceColumn: sessoes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column usuarios
+		dataType: double
+		lineageTag: 3b38779b-f908-4747-86e1-2e0fc20a67e5
+		summarizeBy: sum
+		sourceColumn: usuarios
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes_engajadas
+		dataType: double
+		lineageTag: 0be06cb8-5f81-4e20-9a07-86b311afcdbf
+		summarizeBy: sum
+		sourceColumn: sessoes_engajadas
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column tempo_engajamento_s
+		dataType: double
+		lineageTag: cdd657b3-3a61-497c-9b0e-09b65410112c
+		summarizeBy: sum
+		sourceColumn: tempo_engajamento_s
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition 'gold vw_engajamento_dispositivo' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_engajamento_dispositivo = Fonte{[Schema="gold",Item="vw_engajamento_dispositivo"]}[Data]
+				in
+				    gold_vw_engajamento_dispositivo
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

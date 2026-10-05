@@ -1,0 +1,140 @@
+table 'gold vw_paineis_ranking'
+	lineageTag: 7178db2f-53cb-468b-ad0a-6f8ca21c08dd
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: c089d387-aede-43e2-ba62-c39b6192a760
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column painel
+		dataType: string
+		lineageTag: baae6532-134c-48ee-be31-d5e62c2330ed
+		summarizeBy: none
+		sourceColumn: painel
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ordem_menu
+		dataType: int64
+		formatString: 0
+		lineageTag: 17e1a721-7ff0-46fe-b7c1-e21c5789c937
+		summarizeBy: sum
+		sourceColumn: ordem_menu
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column tema
+		dataType: string
+		lineageTag: c3bffd6c-d856-444d-8251-2d07d29323d9
+		summarizeBy: none
+		sourceColumn: tema
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column hierarquia
+		dataType: string
+		lineageTag: b27b6c77-66da-422b-9ce0-ac8055da80b4
+		summarizeBy: none
+		sourceColumn: hierarquia
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column event_name
+		dataType: string
+		lineageTag: a4d44a81-a610-4bb4-a0e5-bddf77b4f5fa
+		summarizeBy: none
+		sourceColumn: event_name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column acessos
+		dataType: double
+		lineageTag: f3bed6f9-81ba-4fba-9fcf-bef10ef29965
+		summarizeBy: sum
+		sourceColumn: acessos
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes
+		dataType: double
+		lineageTag: 7e20115d-f0db-4828-9795-cf01e8a8125b
+		summarizeBy: sum
+		sourceColumn: sessoes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column usuarios
+		dataType: double
+		lineageTag: 3cfd6424-9652-48c8-92db-92e62707a9ff
+		summarizeBy: sum
+		sourceColumn: usuarios
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes_engajadas
+		dataType: double
+		lineageTag: 26e6ef41-6c70-4075-861b-8183468e7ad7
+		summarizeBy: sum
+		sourceColumn: sessoes_engajadas
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column tempo_medio_seg
+		dataType: double
+		lineageTag: cf2f57d6-817e-4741-815d-cdd94b7b28fe
+		summarizeBy: sum
+		sourceColumn: tempo_medio_seg
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition 'gold vw_paineis_ranking' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_paineis_ranking = Fonte{[Schema="gold",Item="vw_paineis_ranking"]}[Data]
+				in
+				    gold_vw_paineis_ranking
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

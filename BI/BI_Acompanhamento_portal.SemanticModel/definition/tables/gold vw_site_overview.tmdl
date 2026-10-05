@@ -1,0 +1,115 @@
+table 'gold vw_site_overview'
+	lineageTag: 24e28692-4557-4dc5-9e2b-44c17d30cf6f
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: f615ebfa-cbe0-4de9-bbcb-909e59e697d1
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column site
+		dataType: string
+		lineageTag: efcec4e0-a4ae-498c-ad6b-c9f64ebe320e
+		summarizeBy: none
+		sourceColumn: site
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column device_category
+		dataType: string
+		lineageTag: 6334fa67-8eeb-46a1-9a00-9b0fe317cad9
+		summarizeBy: none
+		sourceColumn: device_category
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 762b0e8f-3898-49a0-be29-2bd331a9b587
+		summarizeBy: none
+		sourceColumn: country
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column usuarios
+		dataType: double
+		lineageTag: 1075f455-4dc2-478c-b840-712576739003
+		summarizeBy: sum
+		sourceColumn: usuarios
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes
+		dataType: double
+		lineageTag: f434f11c-03e2-4c65-8d7b-816ec7a26ab5
+		summarizeBy: sum
+		sourceColumn: sessoes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes_engajadas
+		dataType: double
+		lineageTag: 2a5e38f0-9ab1-49fe-b397-04b1137dd3af
+		summarizeBy: sum
+		sourceColumn: sessoes_engajadas
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column tempo_engajamento_s
+		dataType: double
+		lineageTag: b2c55bf7-2649-48f9-b300-2eca7ccc49ad
+		summarizeBy: sum
+		sourceColumn: tempo_engajamento_s
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column region
+		dataType: string
+		lineageTag: cbc3b174-eb33-4d6a-b237-ce4dfc2ae4a9
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'gold vw_site_overview' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_site_overview = Fonte{[Schema="gold",Item="vw_site_overview"]}[Data]
+				in
+				    gold_vw_site_overview
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

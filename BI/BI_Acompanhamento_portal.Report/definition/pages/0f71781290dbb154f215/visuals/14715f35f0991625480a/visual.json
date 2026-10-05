@@ -1,0 +1,98 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "14715f35f0991625480a",
+  "position": {
+    "x": 27.5,
+    "y": 136.25,
+    "z": 1000,
+    "height": 106.25,
+    "width": 1868.75,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "% Mobile"
+                }
+              },
+              "queryRef": "Medidas.% Mobile",
+              "nativeQueryRef": "% Mobile"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Acessos Mobile"
+                }
+              },
+              "queryRef": "Medidas.Acessos Mobile",
+              "nativeQueryRef": "Acessos Mobile"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Acessos Desktop"
+                }
+              },
+              "queryRef": "Medidas.Acessos Desktop",
+              "nativeQueryRef": "Acessos Desktop"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Tempo Engaj Mobile (min)"
+                }
+              },
+              "queryRef": "Medidas.Tempo Engaj Mobile (min)",
+              "nativeQueryRef": "Tempo Engaj Mobile (min)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "% Mobile"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

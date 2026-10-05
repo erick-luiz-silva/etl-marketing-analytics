@@ -1,0 +1,84 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "2557db4b1d9f55858f4d",
+  "position": {
+    "x": 15,
+    "y": 136.25,
+    "z": 1000,
+    "height": 106.25,
+    "width": 1887.5,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Válidas"
+                }
+              },
+              "queryRef": "Medidas.Sessões Válidas",
+              "nativeQueryRef": "Sessões Válidas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Usuários Ativos"
+                }
+              },
+              "queryRef": "Medidas.Usuários Ativos",
+              "nativeQueryRef": "Usuários Ativos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Engajadas Site"
+                }
+              },
+              "queryRef": "Medidas.Sessões Engajadas Site",
+              "nativeQueryRef": "Sessões Engajadas Site"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Sessões Válidas"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "1d539dad0e5569e58d77",
+  "position": {
+    "x": 781.25,
+    "y": 260,
+    "z": 4000,
+    "height": 806.25,
+    "width": 1121.25,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "esriVisual",
+    "query": {
+      "queryState": {
+        "Color": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dRegiao"
+                        }
+                      },
+                      "Property": "uf"
+                    }
+                  },
+                  "Function": 3
+                }
+              },
+              "queryRef": "Min(dRegiao.uf)",
+              "nativeQueryRef": "UF",
+              "displayName": "UF"
+            }
+          ]
+        },
+        "Location": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_sessoes"
+                    }
+                  },
+                  "Property": "country"
+                }
+              },
+              "queryRef": "gold vw_sessoes.country",
+              "nativeQueryRef": "country"
+            }
+          ]
+        },
+        "Size": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Válidas"
+                }
+              },
+              "queryRef": "Medidas.Sessões Válidas",
+              "nativeQueryRef": "Sessões Válidas"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Usuários Ativos"
+                }
+              },
+              "queryRef": "Medidas.Usuários Ativos",
+              "nativeQueryRef": "Usuários Ativos"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Sessões Válidas"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "mapControls": [
+        {
+          "properties": {}
+        }
+      ],
+      "mapTools": [
+        {
+          "properties": {
+            "basemaps": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "share": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "mapObject": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"portalUrl\":\"https://www.arcgis.com\",\"version\":\"2.4\",\"isAuthorNamedUser\":false,\"map\":{\"webmap\":{\"is3d\":false,\"itemData\":{\"operationalLayers\":[{\"id\":\"MyLayer\",\"visibility\":true,\"opacity\":1,\"minScale\":0,\"maxScale\":0,\"refreshInterval\":0,\"title\":\"country\",\"objectIdField\":\"objectId\",\"type\":\"DataLayer\",\"layerType\":\"ArcGISFeatureLayer\",\"popupEnabled\":true,\"disablePopup\":false,\"visible\":true,\"geometryType\":\"polygon\",\"source\":[{\"attributes\":{},\"geometry\":{\"rings\":[],\"type\":\"polygon\",\"spatialReference\":{\"latestWkid\":3857,\"wkid\":102100}}}],\"spatialReference\":{\"latestWkid\":3857,\"wkid\":102100},\"esriMaps\":{\"isTimeEnabled\":\"false\",\"clusterInfo\":null,\"lastShareInfo\":null},\"timeInfo\":null,\"showLabels\":true,\"featureCollection\":{\"layers\":[{\"popupInfo\":{\"popupElements\":[{\"type\":\"fields\",\"fieldInfos\":[{\"fieldName\":\"gold_20vw_sessoes_country\",\"isEditable\":true,\"label\":\"country\",\"tooltip\":\"\",\"visible\":true},{\"fieldName\":\"expression/Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"isEditable\":true,\"label\":\"Sessões Válidas\",\"visible\":true},{\"fieldName\":\"Min_dRegiao_uf_\",\"isEditable\":true,\"label\":\"UF\",\"tooltip\":\"\",\"visible\":true},{\"fieldName\":\"expression/Medidas_Usu_C3_A1rios_20Ativos\",\"isEditable\":true,\"label\":\"Usuários Ativos\",\"visible\":true},{\"fieldName\":\"ROW_ID\",\"format\":{\"digitSeparator\":true,\"places\":0},\"isEditable\":true,\"label\":\"ROW_ID\",\"tooltip\":\"\",\"visible\":true}]}],\"expressionInfos\":[{\"name\":\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"title\":\"Sessões Válidas\",\"expression\":\"// PowerBI number format: #,##0\\n\\nif (IsEmpty($feature[\\\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\\\"]))\\n{\\n  return $feature[\\\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\\\"] \\n}\\nIIF(Text($feature[\\\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\\\"], \\\"#,###\\\") == \\\"0\\\" || Text($feature[\\\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\\\"], \\\"#,###\\\") == \\\"-0\\\", \\\"\\\", Text($feature[\\\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\\\"], \\\"#,###\\\"))\"},{\"name\":\"Medidas_Usu_C3_A1rios_20Ativos\",\"title\":\"Usuários Ativos\",\"expression\":\"// PowerBI number format: #,##0\\n\\nif (IsEmpty($feature[\\\"Medidas_Usu_C3_A1rios_20Ativos\\\"]))\\n{\\n  return $feature[\\\"Medidas_Usu_C3_A1rios_20Ativos\\\"] \\n}\\nIIF(Text($feature[\\\"Medidas_Usu_C3_A1rios_20Ativos\\\"], \\\"#,###\\\") == \\\"0\\\" || Text($feature[\\\"Medidas_Usu_C3_A1rios_20Ativos\\\"], \\\"#,###\\\") == \\\"-0\\\", \\\"\\\", Text($feature[\\\"Medidas_Usu_C3_A1rios_20Ativos\\\"], \\\"#,###\\\"))\"}],\"fieldInfos\":[{\"fieldName\":\"gold_20vw_sessoes_country\",\"isEditable\":true,\"label\":\"country\",\"tooltip\":\"\",\"visible\":true},{\"fieldName\":\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"format\":{\"digitSeparator\":true,\"places\":2},\"isEditable\":true,\"label\":\"Sessões Válidas\",\"tooltip\":\"\",\"visible\":false},{\"fieldName\":\"expression/Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"isEditable\":true,\"label\":\"Sessões Válidas\",\"visible\":true},{\"fieldName\":\"Min_dRegiao_uf_\",\"isEditable\":true,\"label\":\"UF\",\"tooltip\":\"\",\"visible\":true},{\"fieldName\":\"Medidas_Usu_C3_A1rios_20Ativos\",\"format\":{\"digitSeparator\":true,\"places\":2},\"isEditable\":true,\"label\":\"Usuários Ativos\",\"tooltip\":\"\",\"visible\":false},{\"fieldName\":\"expression/Medidas_Usu_C3_A1rios_20Ativos\",\"isEditable\":true,\"label\":\"Usuários Ativos\",\"visible\":true},{\"fieldName\":\"ROW_ID\",\"format\":{\"digitSeparator\":true,\"places\":0},\"isEditable\":true,\"label\":\"ROW_ID\",\"tooltip\":\"\",\"visible\":true}],\"title\":\"\",\"actions\":[]},\"layerDefinition\":{\"objectIdField\":\"objectId\",\"fields\":[{\"alias\":\"objectId\",\"editable\":false,\"name\":\"objectId\",\"nullable\":false,\"type\":\"esriFieldTypeOID\"},{\"alias\":\"country\",\"editable\":true,\"length\":-1,\"name\":\"gold_20vw_sessoes_country\",\"nullable\":true,\"type\":\"esriFieldTypeString\"},{\"alias\":\"Sessões Válidas\",\"editable\":true,\"name\":\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"nullable\":true,\"type\":\"esriFieldTypeDouble\"},{\"alias\":\"UF\",\"editable\":true,\"length\":-1,\"name\":\"Min_dRegiao_uf_\",\"nullable\":true,\"type\":\"esriFieldTypeString\"},{\"alias\":\"Usuários Ativos\",\"editable\":true,\"name\":\"Medidas_Usu_C3_A1rios_20Ativos\",\"nullable\":true,\"type\":\"esriFieldTypeDouble\"},{\"alias\":\"ROW_ID\",\"editable\":true,\"name\":\"ROW_ID\",\"nullable\":true,\"type\":\"esriFieldTypeInteger\"}],\"geometryType\":\"polygon\",\"drawingInfo\":{\"renderer\":{\"authoringInfo\":{\"visualVariables\":[{\"maxSliderValue\":2613,\"minSliderValue\":1,\"theme\":\"high-to-low\",\"type\":\"sizeInfo\"}]},\"type\":\"uniqueValue\",\"visualVariables\":[{\"type\":\"sizeInfo\",\"field\":\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\",\"maxDataValue\":2613,\"maxSize\":30,\"minDataValue\":1,\"minSize\":3,\"valueUnit\":\"unknown\"}],\"field1\":\"Min_dRegiao_uf_\",\"legendOptions\":{\"title\":\"UF\"},\"defaultLabel\":\"Outro\",\"defaultSymbol\":{\"type\":\"esriSFS\",\"color\":[170,170,170,255],\"outline\":{\"type\":\"esriSLS\",\"color\":[153,153,153,64],\"width\":0.75,\"style\":\"esriSLSSolid\"},\"style\":\"esriSFSSolid\"},\"uniqueValueGroups\":[],\"uniqueValueInfos\":[]},\"transparency\":0},\"featureReduction\":null,\"locationProvider\":{\"type\":\"cachedstdgeo\",\"adminLevel\":\"countries\",\"targetSR\":{\"latestWkid\":3857,\"wkid\":102100},\"useExactMatch\":false,\"sourceCountry\":\"world\",\"geographyLevel\":\"countries\",\"lookupFields\":[{\"lookupField\":\"Location\",\"outField\":\"gold_20vw_sessoes_country\"}]},\"minScale\":0,\"maxScale\":0,\"definitionExpression\":null,\"templates\":[{\"name\":\"New Feature\",\"description\":\"\",\"prototype\":{\"attributes\":{\"gold_20vw_sessoes_country\":null,\"Medidas_Sess_C3_B5es_20V_C3_A1lidas\":null,\"Min_dRegiao_uf_\":null,\"Medidas_Usu_C3_A1rios_20Ativos\":null,\"ROW_ID\":null}}}],\"elevationInfo\":null,\"name\":\"country\",\"type\":\"DataLayer\",\"queryParameters\":{\"tableId\":\"\"}},\"featureSet\":{\"features\":[{\"attributes\":{},\"geometry\":{\"rings\":[],\"type\":\"polygon\",\"spatialReference\":{\"latestWkid\":3857,\"wkid\":102100}}}]}}]}}],\"tables\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"VectorTile_1970\",\"opacity\":1,\"title\":\"Light Gray Base\",\"visibility\":true,\"layerType\":\"VectorTileLayer\",\"styleUrl\":\"https://cdn.arcgis.com/sharing/rest/content/items/291da5eab3a0412593b66d384379f89f/resources/styles/root.json\"},{\"id\":\"VectorTile_7117\",\"opacity\":1,\"title\":\"Light Gray Reference\",\"visibility\":true,\"layerType\":\"VectorTileLayer\",\"styleUrl\":\"https://cdn.arcgis.com/sharing/rest/content/items/1768e8369a214dfab4e2167d5c5f2454/resources/styles/root.json\",\"isReference\":true}],\"title\":\"Light Gray Canvas\"},\"version\":\"2.26\",\"authoringApp\":\"ArcGIS for Power BI\",\"authoringAppVersion\":\"2026.2.992\",\"bookmarks\":[],\"initialState\":{\"viewpoint\":{\"targetGeometry\":{\"spatialReference\":{\"latestWkid\":3857,\"wkid\":102100},\"xmin\":-21283920.614237692,\"ymin\":-8667332.728727954,\"xmax\":21295784.614178274,\"ymax\":19040784.276528023}}}}},\"webmapExtensions\":{\"format\":2}},\"embedCheckPassed\":false}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "geometryCache": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"key\":\"cachedstdgeo@@world\",\"compressionMethod\":\"pako\",\"data\":\"H4sIAAAAAAAAAzWOwQ7CMAxDf2XamT9CHNLN6iLaFGUJsH09TYFT3eTF9nVOSieX+TK7sGGddiPD3v+pFX4ydbW00moaUmAbtJCsgZDvpl9kY4m34s1Li5VmiH2HrIiLrh5NzTNFXIZWkqOr/UEs4UFC68+sIGhSyk6DeWFFQE8ITu9+kSG5DZFQMnsNV+/tK40pG5VjdH5NJ+hfAeph2Ny26d4Ugbr6CLp9AB6Vr/MQAQAA\"}'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "da848056b450b3b7ae70",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "gold vw_sessoes"
+              }
+            },
+            "Property": "region"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "g",
+              "Entity": "gold vw_sessoes",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "In": {
+                      "Expressions": [
+                        {
+                          "Column": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Source": "g"
+                              }
+                            },
+                            "Property": "region"
+                          }
+                        }
+                      ],
+                      "Values": [
+                        [
+                          {
+                            "Literal": {
+                              "Value": "'(not set)'"
+                            }
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User",
+        "objects": {
+          "general": [
+            {
+              "properties": {
+                "isInvertedSelectionMode": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "true"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

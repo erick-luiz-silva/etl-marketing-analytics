@@ -1,0 +1,122 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "afc5744d87d27ac5230e",
+  "position": {
+    "x": 27.5,
+    "y": 253.75,
+    "z": 2000,
+    "height": 245,
+    "width": 1868.75,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_sessoes"
+                    }
+                  },
+                  "Property": "device_category"
+                }
+              },
+              "queryRef": "gold vw_sessoes.device_category",
+              "nativeQueryRef": "device_category",
+              "active": true
+            }
+          ]
+        },
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_paineis_ranking"
+                    }
+                  },
+                  "Property": "painel"
+                }
+              },
+              "queryRef": "gold vw_paineis_ranking.painel",
+              "nativeQueryRef": "painel",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total Acessos"
+                }
+              },
+              "queryRef": "Medidas.Total Acessos",
+              "nativeQueryRef": "Total Acessos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Taxa Engajamento %"
+                }
+              },
+              "queryRef": "Medidas.Taxa Engajamento %",
+              "nativeQueryRef": "Taxa Engajamento %"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Total Acessos"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "columnAdjustment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'growToFit'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

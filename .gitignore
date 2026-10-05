@@ -8,8 +8,11 @@ logs/
 *.log
 *.csv
 *.bat
-# Power BI
-BI/
+# Power BI — o PBIP (Report + SemanticModel) é versionado; ficam fora só o
+# binário .pbix e os arquivos locais/cache gerados pelo Desktop.
+BI/*.pbix
+BI/**/.pbi/localSettings.json
+BI/**/.pbi/cache.abf
 
 # Relatório: saídas geradas, templates e imagens
 report/*.html

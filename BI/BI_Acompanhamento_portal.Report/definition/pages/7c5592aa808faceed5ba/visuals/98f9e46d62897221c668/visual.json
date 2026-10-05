@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "98f9e46d62897221c668",
+  "position": {
+    "x": 25.714285714285715,
+    "y": 242.85714285714286,
+    "z": 2000,
+    "height": 488.57142857142861,
+    "width": 830,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_paineis_ranking"
+                    }
+                  },
+                  "Property": "painel"
+                }
+              },
+              "queryRef": "gold vw_paineis_ranking.painel",
+              "nativeQueryRef": "painel",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total Acessos"
+                }
+              },
+              "queryRef": "Medidas.Total Acessos",
+              "nativeQueryRef": "Total Acessos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Usuários Únicos"
+                }
+              },
+              "queryRef": "Medidas.Usuários Únicos",
+              "nativeQueryRef": "Usuários Únicos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Engajadas"
+                }
+              },
+              "queryRef": "Medidas.Sessões Engajadas",
+              "nativeQueryRef": "Sessões Engajadas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Taxa Engajamento %"
+                }
+              },
+              "queryRef": "Medidas.Taxa Engajamento %",
+              "nativeQueryRef": "Taxa Engajamento %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Tempo Médio (min)"
+                }
+              },
+              "queryRef": "Medidas.Tempo Médio (min)",
+              "nativeQueryRef": "Tempo Médio (min)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Total Acessos"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "columnAdjustment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'growToFit'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "205.9154620038228D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "gold vw_paineis_ranking.painel"
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

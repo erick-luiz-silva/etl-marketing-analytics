@@ -1,0 +1,165 @@
+table 'gold vw_sessoes'
+	lineageTag: 95cbd98b-29f9-41e7-b088-713a3f694eca
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 275011a5-dff0-46c1-8668-69419e71b159
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column site
+		dataType: string
+		lineageTag: a4bbc71b-1e2e-4b3d-b52b-a1695442f15c
+		summarizeBy: none
+		sourceColumn: site
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column hostname
+		dataType: string
+		lineageTag: 31a9384d-ab43-4c8b-b063-72db2df50ed9
+		summarizeBy: none
+		sourceColumn: hostname
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 1c83166d-9810-4a03-a99e-8602d9a16714
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: country
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column city
+		dataType: string
+		lineageTag: 4a7a9114-a0c9-4547-a49c-ce0a073b45c0
+		dataCategory: City
+		summarizeBy: none
+		sourceColumn: city
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column device_category
+		dataType: string
+		lineageTag: 4b5eb9b5-fe5f-430f-98b6-b3a106fef640
+		summarizeBy: none
+		sourceColumn: device_category
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column browser
+		dataType: string
+		lineageTag: 5dbae257-e0f0-4cd2-bc47-2f0cee07fb54
+		summarizeBy: none
+		sourceColumn: browser
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column operating_system
+		dataType: string
+		lineageTag: 3d3ffd92-4183-43fc-bb11-c808b001a84d
+		summarizeBy: none
+		sourceColumn: operating_system
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column trafego_valido
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 0afdece0-cc72-48ae-817e-7d7c4f375f90
+		summarizeBy: none
+		sourceColumn: trafego_valido
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column sessions
+		dataType: double
+		formatString: 0
+		lineageTag: 8b9553c8-c904-425c-b32b-50e514fc1c2c
+		summarizeBy: sum
+		sourceColumn: sessions
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column engaged_sessions
+		dataType: double
+		formatString: 0
+		lineageTag: 79cd9f78-1b44-4c61-a3c7-69d367569e4e
+		summarizeBy: sum
+		sourceColumn: engaged_sessions
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column active_users
+		dataType: double
+		formatString: 0
+		lineageTag: 2713372e-fedc-4410-a108-887ad26fdd86
+		summarizeBy: sum
+		sourceColumn: active_users
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column user_engagement_seconds
+		dataType: double
+		lineageTag: 8dc4aaf8-c404-4d52-9d69-13deeb983302
+		summarizeBy: sum
+		sourceColumn: user_engagement_seconds
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column region
+		dataType: string
+		lineageTag: 9869b029-58c5-4fbf-8958-11b1f09e75ca
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'gold vw_sessoes' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_sessoes = Fonte{[Schema="gold",Item="vw_sessoes"]}[Data]
+				in
+				    gold_vw_sessoes
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

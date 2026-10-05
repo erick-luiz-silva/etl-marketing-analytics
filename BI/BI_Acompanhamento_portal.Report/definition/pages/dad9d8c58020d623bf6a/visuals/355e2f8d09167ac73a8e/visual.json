@@ -1,0 +1,84 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "355e2f8d09167ac73a8e",
+  "position": {
+    "x": 18.75,
+    "y": 136.25,
+    "z": 1000,
+    "height": 106.25,
+    "width": 1878.75,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Pageviews"
+                }
+              },
+              "queryRef": "Medidas.Pageviews",
+              "nativeQueryRef": "Pageviews"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Usuários Institucional"
+                }
+              },
+              "queryRef": "Medidas.Usuários Institucional",
+              "nativeQueryRef": "Usuários Institucional"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Eventos por Usuário"
+                }
+              },
+              "queryRef": "Medidas.Eventos por Usuário",
+              "nativeQueryRef": "Eventos por Usuário"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Pageviews"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

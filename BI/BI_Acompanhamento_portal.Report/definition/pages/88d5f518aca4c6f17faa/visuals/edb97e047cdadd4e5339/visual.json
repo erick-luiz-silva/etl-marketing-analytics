@@ -1,0 +1,98 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "edb97e047cdadd4e5339",
+  "position": {
+    "x": 26.25,
+    "y": 136.25,
+    "z": 1000,
+    "height": 106.25,
+    "width": 1870,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total Sessões"
+                }
+              },
+              "queryRef": "Medidas.Total Sessões",
+              "nativeQueryRef": "Total Sessões"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Válidas"
+                }
+              },
+              "queryRef": "Medidas.Sessões Válidas",
+              "nativeQueryRef": "Sessões Válidas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Taxa Engaj Site %"
+                }
+              },
+              "queryRef": "Medidas.Taxa Engaj Site %",
+              "nativeQueryRef": "Taxa Engaj Site %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Tempo Engaj Médio (min)"
+                }
+              },
+              "queryRef": "Medidas.Tempo Engaj Médio (min)",
+              "nativeQueryRef": "Tempo Engaj Médio (min)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Total Sessões"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

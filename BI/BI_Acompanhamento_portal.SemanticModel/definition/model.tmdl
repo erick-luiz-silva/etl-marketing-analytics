@@ -1,0 +1,32 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: pt-BR
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["gold vw_engajamento_dispositivo","gold vw_institucional_eventos","gold vw_paineis_ranking","gold vw_paineis_sem_mapeamento","gold vw_painel_normalizado","gold vw_qualidade_trafego","gold vw_sessoes","gold vw_site_overview"]
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table 'gold vw_engajamento_dispositivo'
+ref table DateTableTemplate_4dc80c9e-d2b0-406b-afb6-38b92e959255
+ref table 'gold vw_institucional_eventos'
+ref table 'gold vw_paineis_ranking'
+ref table 'gold vw_paineis_sem_mapeamento'
+ref table 'gold vw_painel_normalizado'
+ref table 'gold vw_qualidade_trafego'
+ref table 'gold vw_sessoes'
+ref table 'gold vw_site_overview'
+ref table dCalendario
+ref table LocalDateTable_4e218720-95af-4d20-8acd-9b001a99e473
+ref table Medidas
+ref table dSite
+ref table dRegiao
+
+ref cultureInfo pt-BR
+

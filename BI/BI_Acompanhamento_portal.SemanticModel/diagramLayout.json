@@ -1,0 +1,174 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 456.94676035108876,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 568,
+            "y": 157.171875
+          },
+          "nodeIndex": "gold vw_engajamento_dispositivo",
+          "nodeLineageTag": "dedbc7e0-3d2d-4385-857f-dd3ea59a402b",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 334,
+            "y": 143.171875
+          },
+          "nodeIndex": "gold vw_institucional_eventos",
+          "nodeLineageTag": "6b9a90fc-6bab-4497-8557-5da161002a05",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 852,
+            "y": 155.171875
+          },
+          "nodeIndex": "gold vw_paineis_ranking",
+          "nodeLineageTag": "7178db2f-53cb-468b-ad0a-6f8ca21c08dd",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 191.171875
+          },
+          "nodeIndex": "gold vw_paineis_sem_mapeamento",
+          "nodeLineageTag": "1dbeb4b5-843f-48d4-ba5a-80c541f9aa8d",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1136,
+            "y": 229.171875
+          },
+          "nodeIndex": "gold vw_painel_normalizado",
+          "nodeLineageTag": "4b29fac0-8ca9-4da7-9cb3-528d10808700",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1420,
+            "y": 205.171875
+          },
+          "nodeIndex": "gold vw_qualidade_trafego",
+          "nodeLineageTag": "8d573ed1-3943-476f-8123-1ca5de8dcef7",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1704,
+            "y": 155.171875
+          },
+          "nodeIndex": "gold vw_sessoes",
+          "nodeLineageTag": "95cbd98b-29f9-41e7-b088-713a3f694eca",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1988,
+            "y": 169.171875
+          },
+          "nodeIndex": "gold vw_site_overview",
+          "nodeLineageTag": "24e28692-4557-4dc5-9e2b-44c17d30cf6f",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2222,
+            "y": 186.171875
+          },
+          "nodeIndex": "dCalendario",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2456,
+            "y": 179.671875
+          },
+          "nodeIndex": "Medidas",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2690,
+            "y": 133.359375
+          },
+          "nodeIndex": "dSite",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2924,
+            "y": 105.359375
+          },
+          "nodeIndex": "dRegiao",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas as tabelas",
+      "zoomValue": 56.717035545894554,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas as tabelas",
+  "defaultDiagram": "Todas as tabelas"
+}

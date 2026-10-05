@@ -1,0 +1,47 @@
+table 'gold vw_painel_normalizado'
+	lineageTag: 4b29fac0-8ca9-4da7-9cb3-528d10808700
+
+	column id_painel_evento
+		dataType: int64
+		formatString: 0
+		lineageTag: 8c64eea1-1615-4a67-bcd8-0f9958a9821c
+		summarizeBy: sum
+		sourceColumn: id_painel_evento
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_painel_raw
+		dataType: string
+		lineageTag: 201a1746-50e3-4fba-809e-9ca60e1790bf
+		summarizeBy: none
+		sourceColumn: nome_painel_raw
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column painel
+		dataType: string
+		lineageTag: edb87d54-dd70-45c7-ba80-2bb2224a70eb
+		summarizeBy: none
+		sourceColumn: painel
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'gold vw_painel_normalizado' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_painel_normalizado = Fonte{[Schema="gold",Item="vw_painel_normalizado"]}[Data]
+				in
+				    gold_vw_painel_normalizado
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

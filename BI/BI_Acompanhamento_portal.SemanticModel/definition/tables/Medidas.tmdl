@@ -1,0 +1,213 @@
+table Medidas
+	lineageTag: a6585768-4636-4a47-9601-843eafb13069
+
+	/// Total de acessos aos painéis (painel_acessado + painel_clicado)
+	measure 'Total Acessos' = SUM('gold vw_paineis_ranking'[acessos])
+		formatString: #,##0
+		displayFolder: 01 - Painéis
+		lineageTag: fa6c9efb-128b-4775-ae34-2d3f05c9468b
+
+	/// Soma de usuários únicos por painel
+	measure 'Usuários Únicos' = SUM('gold vw_paineis_ranking'[usuarios])
+		formatString: #,##0
+		displayFolder: 01 - Painéis
+		lineageTag: cdea0a38-6a9c-4f35-a39f-a4309d0f8e58
+
+	/// Total de sessões nos painéis
+	measure Sessões = SUM('gold vw_paineis_ranking'[sessoes])
+		formatString: #,##0
+		displayFolder: 01 - Painéis
+		lineageTag: 740baaba-4934-4286-8925-15253a02bcd5
+
+	/// Sessões com session_engaged = 1
+	measure 'Sessões Engajadas' = SUM('gold vw_paineis_ranking'[sessoes_engajadas])
+		formatString: #,##0
+		displayFolder: 01 - Painéis
+		lineageTag: 876d1d83-206a-425d-a87b-4712c0cd15dd
+
+	/// Tempo médio de engajamento por painel em minutos
+	measure 'Tempo Médio (min)' = DIVIDE(SUM('gold vw_paineis_ranking'[tempo_medio_seg]), 60, 0)
+		formatString: #,##0.0
+		displayFolder: 01 - Painéis
+		lineageTag: 37dd69ef-47fa-4406-a51b-8872765902a8
+
+	/// Percentual de sessões com engajamento real
+	measure 'Taxa Engajamento %' = DIVIDE([Sessões Engajadas], [Sessões], 0)
+		formatString: 0.0%
+		displayFolder: 01 - Painéis
+		lineageTag: e1dcf1f6-f2c7-45f2-835c-c1594f8a53d2
+
+	/// Sessões de usuários mobile
+	measure 'Acessos Mobile' = CALCULATE(SUM('gold vw_engajamento_dispositivo'[sessoes]), 'gold vw_engajamento_dispositivo'[device_category] = "mobile")
+		formatString: #,##0
+		displayFolder: 02 - Dispositivos
+		lineageTag: ce54b58d-57cf-4899-bba4-257e2f6ace2e
+
+	/// Sessões de usuários desktop
+	measure 'Acessos Desktop' = CALCULATE(SUM('gold vw_engajamento_dispositivo'[sessoes]), 'gold vw_engajamento_dispositivo'[device_category] = "desktop")
+		formatString: #,##0
+		displayFolder: 02 - Dispositivos
+		lineageTag: 6578d1de-ab0c-47f9-9184-891d95acbe41
+
+	/// Total de sessões por dispositivo
+	measure 'Total Acessos Dispositivo' = SUM('gold vw_engajamento_dispositivo'[sessoes])
+		formatString: #,##0
+		displayFolder: 02 - Dispositivos
+		lineageTag: 3df3f26b-cefc-4518-b5cc-8078f8636856
+
+	/// Proporção de acessos via mobile
+	measure '% Mobile' = DIVIDE([Acessos Mobile], [Total Acessos Dispositivo], 0)
+		formatString: 0.0%
+		displayFolder: 02 - Dispositivos
+		lineageTag: c3460430-85f7-4baa-af92-8494589de95f
+
+	/// Tempo médio de engajamento mobile em minutos
+	measure 'Tempo Engaj Mobile (min)' = DIVIDE(CALCULATE(SUM('gold vw_sessoes'[user_engagement_seconds]), 'gold vw_sessoes'[trafego_valido] = TRUE(), 'gold vw_sessoes'[device_category] = "mobile"), [Sessões Válidas] * 60, 0)
+		formatString: #,##0.0
+		displayFolder: 02 - Dispositivos
+		lineageTag: f1304bf6-1406-456b-b91a-62f67a14012d
+
+	/// Total bruto de sessões (antes do filtro de bot)
+	measure 'Total Sessões Site' = SUM('gold vw_sessoes'[sessions])
+		formatString: #,##0
+		displayFolder: 03 - Audiência
+		lineageTag: 2434cf5f-02c8-4deb-a3bd-f4b7d8e9e52d
+
+	/// Sessões de tráfego humano validado
+	measure 'Sessões Válidas' = CALCULATE(SUM('gold vw_sessoes'[sessions]), 'gold vw_sessoes'[trafego_valido] = TRUE())
+		formatString: #,##0
+		displayFolder: 03 - Audiência
+		lineageTag: a423de28-473f-408c-8b56-962d7bb476d2
+
+	/// Total de usuários ativos no período
+	measure 'Usuários Ativos' = SUM('gold vw_sessoes'[active_users])
+		formatString: #,##0
+		displayFolder: 03 - Audiência
+		lineageTag: 809e6957-3862-463d-a542-a224deb54041
+
+	/// Sessões com engajamento real no site
+	measure 'Sessões Engajadas Site' = SUM('gold vw_sessoes'[engaged_sessions])
+		formatString: #,##0
+		displayFolder: 03 - Audiência
+		lineageTag: 3984c5d5-f379-4a7b-a160-13ce4e9c8829
+
+	/// Tempo total de engajamento de tráfego válido em minutos
+	measure 'Tempo Total Engaj (min)' = DIVIDE(CALCULATE(SUM('gold vw_sessoes'[user_engagement_seconds]), 'gold vw_sessoes'[trafego_valido] = TRUE()), 60, 0)
+		formatString: #,##0.0
+		displayFolder: 03 - Audiência
+		lineageTag: d772fb16-6427-4708-8fe8-c97ad6d9de91
+
+	/// Sessões após filtros de bot
+	measure 'Sessões Válidas Total' = SUM('gold vw_qualidade_trafego'[sessoes_validas])
+		formatString: #,##0
+		displayFolder: 04 - Qualidade
+		lineageTag: c9af2de8-80cd-4f1a-bc81-609dda64a0b2
+
+	/// Sessões removidas como bot
+	measure 'Sessões Descartadas' = SUM('gold vw_qualidade_trafego'[sessoes_descartadas])
+		formatString: #,##0
+		displayFolder: 04 - Qualidade
+		lineageTag: 05f52475-a5c4-47df-b3e6-e838d0dff43b
+
+	/// Total antes do filtro
+	measure 'Total Sessões Bruto' = [Sessões Válidas Total] + [Sessões Descartadas]
+		formatString: #,##0
+		displayFolder: 04 - Qualidade
+		lineageTag: c877e825-0f07-4d6d-9b97-96b2a6f93ec7
+
+	/// Proporção de tráfego humano vs total
+	measure '% Tráfego Real' = DIVIDE([Sessões Válidas Total], [Total Sessões Bruto], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Qualidade
+		lineageTag: 4f0af37e-451a-4e88-998b-227d94064537
+
+	/// Proporção de tráfego robótico vs total
+	measure '% Bots' = DIVIDE([Sessões Descartadas], [Total Sessões Bruto], 0)
+		formatString: 0.0%
+		displayFolder: 04 - Qualidade
+		lineageTag: 09d3d05c-0b21-42be-a162-fe9f0638957f
+
+	/// Usuários totais dos dois portais
+	measure 'Total Usuários' = SUM('gold vw_site_overview'[usuarios])
+		formatString: #,##0
+		displayFolder: 05 - Overview
+		lineageTag: 04957946-42d3-40d2-bd4d-f2de124755d3
+
+	/// Sessões totais dos dois portais
+	measure 'Total Sessões' = SUM('gold vw_site_overview'[sessoes])
+		formatString: #,##0
+		displayFolder: 05 - Overview
+		lineageTag: 5ac82b5c-0d24-4603-a486-82f3959e18ba
+
+	/// Sessões com engajamento real
+	measure 'Total Sessões Engajadas' = SUM('gold vw_site_overview'[sessoes_engajadas])
+		formatString: #,##0
+		displayFolder: 05 - Overview
+		lineageTag: 65888501-9771-4bc3-979c-26010f8fc4e3
+
+	/// Taxa de engajamento geral do portal
+	measure 'Taxa Engaj Site %' = DIVIDE([Total Sessões Engajadas], [Total Sessões], 0)
+		formatString: 0.0%
+		displayFolder: 05 - Overview
+		lineageTag: 5bbe860c-1b2a-4e57-8874-efa41a8b4d58
+
+	/// Tempo médio por sessão válida em minutos
+	measure 'Tempo Engaj Médio (min)' = DIVIDE(CALCULATE(SUM('gold vw_sessoes'[user_engagement_seconds]), 'gold vw_sessoes'[trafego_valido] = TRUE()), [Sessões Válidas] * 60, 0)
+		formatString: #,##0.0
+		displayFolder: 05 - Overview
+		lineageTag: 12885e74-c6c7-4501-bff1-442b614bfbb1
+
+	/// Total de eventos no site institucional abcs.org.br
+	measure 'Eventos Institucional' = SUM('gold vw_institucional_eventos'[eventos])
+		formatString: #,##0
+		displayFolder: 06 - Institucional
+		lineageTag: 3179cac2-3303-4926-92a5-df89f4bb3521
+
+	/// Usuários ativos no site institucional
+	measure 'Usuários Institucional' = SUM('gold vw_institucional_eventos'[usuarios])
+		formatString: #,##0
+		displayFolder: 06 - Institucional
+		lineageTag: 3d503297-637f-4771-bf95-070ef7a80e81
+
+	/// Total de visualizações de página
+	measure Pageviews = CALCULATE(SUM('gold vw_institucional_eventos'[eventos]), 'gold vw_institucional_eventos'[event_name] = "page_view")
+		formatString: #,##0
+		displayFolder: 06 - Institucional
+		lineageTag: b4be65f7-943f-4028-a193-7a70b3b26781
+
+	/// Média de eventos por usuário — indica profundidade de navegação
+	measure 'Eventos por Usuário' = DIVIDE([Eventos Institucional], [Usuários Institucional], 0)
+		formatString: #,##0.0
+		displayFolder: 06 - Institucional
+		lineageTag: a6a06a95-7ef2-493d-b3c5-fd5c08c51cb4
+
+	/// Quantidade de nomes de painel não mapeados no Silver
+	measure 'Painéis Sem Mapeamento' = COUNTROWS('gold vw_paineis_sem_mapeamento')
+		formatString: #,##0
+		displayFolder: 07 - Manutenção
+		lineageTag: 6cd91c34-ea79-40ac-a19c-e934a5ab1984
+
+	/// Total de eventos com painel não reconhecido
+	measure 'Eventos Não Mapeados' = SUM('gold vw_paineis_sem_mapeamento'[eventos])
+		formatString: #,##0
+		displayFolder: 07 - Manutenção
+		lineageTag: a9750b52-5bf8-4b8d-8a71-57476dd9f547
+
+	column Column
+		isHidden
+		formatString: 0
+		lineageTag: a2fc4f63-1c3e-4cfb-b58a-9d758359cd18
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Column]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Medidas = calculated
+		mode: import
+		source = Row("Column", BLANK())
+
+	annotation PBI_Id = fbcc9af691bc47ccbef083b559d1f071
+
+	annotation 436ba87b-9c83-4389-a31b-ebd06a36be98 = {"Expression":""}
+

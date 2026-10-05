@@ -1,0 +1,335 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "691d2341ad1e250f6bf4",
+  "position": {
+    "x": 18.75,
+    "y": 796.25,
+    "z": 2000,
+    "height": 270,
+    "width": 1083.75,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_institucional_eventos"
+                    }
+                  },
+                  "Property": "country"
+                }
+              },
+              "queryRef": "gold vw_institucional_eventos.country",
+              "nativeQueryRef": "country",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Usuários Institucional"
+                }
+              },
+              "queryRef": "Medidas.Usuários Institucional",
+              "nativeQueryRef": "Usuários Institucional"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Usuários Institucional"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "cc1972bf9ec9e3d41637",
+        "type": "Exclude",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "g",
+              "Entity": "gold vw_sessoes",
+              "Type": 0
+            },
+            {
+              "Name": "d",
+              "Entity": "dRegiao",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Or": {
+                      "Left": {
+                        "Or": {
+                          "Left": {
+                            "Or": {
+                              "Left": {
+                                "In": {
+                                  "Expressions": [
+                                    {
+                                      "Column": {
+                                        "Expression": {
+                                          "SourceRef": {
+                                            "Source": "g"
+                                          }
+                                        },
+                                        "Property": "country"
+                                      }
+                                    }
+                                  ],
+                                  "Values": [
+                                    [
+                                      {
+                                        "Literal": {
+                                          "Value": "'(not set)'"
+                                        }
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              "Right": {
+                                "In": {
+                                  "Expressions": [
+                                    {
+                                      "Column": {
+                                        "Expression": {
+                                          "SourceRef": {
+                                            "Source": "g"
+                                          }
+                                        },
+                                        "Property": "city"
+                                      }
+                                    }
+                                  ],
+                                  "Values": [
+                                    [
+                                      {
+                                        "Literal": {
+                                          "Value": "'(not set)'"
+                                        }
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "Right": {
+                            "In": {
+                              "Expressions": [
+                                {
+                                  "Column": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "d"
+                                      }
+                                    },
+                                    "Property": "estado"
+                                  }
+                                }
+                              ],
+                              "Values": [
+                                [
+                                  {
+                                    "Literal": {
+                                      "Value": "''"
+                                    }
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "Right": {
+                        "In": {
+                          "Expressions": [
+                            {
+                              "Column": {
+                                "Expression": {
+                                  "SourceRef": {
+                                    "Source": "d"
+                                  }
+                                },
+                                "Property": "estado"
+                              }
+                            }
+                          ],
+                          "Values": [
+                            [
+                              {
+                                "Literal": {
+                                  "Value": "null"
+                                }
+                              }
+                            ]
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "Exclude"
+      },
+      {
+        "name": "184c17c615fa1d143797",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "gold vw_institucional_eventos"
+              }
+            },
+            "Property": "country"
+          }
+        },
+        "type": "TopN",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "subquery",
+              "Expression": {
+                "Subquery": {
+                  "Query": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "g",
+                        "Entity": "gold vw_institucional_eventos",
+                        "Type": 0
+                      },
+                      {
+                        "Name": "m",
+                        "Entity": "Medidas",
+                        "Type": 0
+                      }
+                    ],
+                    "Select": [
+                      {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "g"
+                            }
+                          },
+                          "Property": "country"
+                        },
+                        "Name": "field"
+                      }
+                    ],
+                    "OrderBy": [
+                      {
+                        "Direction": 2,
+                        "Expression": {
+                          "Measure": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Source": "m"
+                              }
+                            },
+                            "Property": "Usuários Institucional"
+                          }
+                        }
+                      }
+                    ],
+                    "Top": 10
+                  }
+                }
+              },
+              "Type": 2
+            },
+            {
+              "Name": "g",
+              "Entity": "gold vw_institucional_eventos",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "g"
+                          }
+                        },
+                        "Property": "country"
+                      }
+                    }
+                  ],
+                  "Table": {
+                    "SourceRef": {
+                      "Source": "subquery"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

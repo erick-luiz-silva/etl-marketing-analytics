@@ -1,0 +1,234 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "175cdc502cc7f8494d0e",
+  "position": {
+    "x": 15,
+    "y": 260,
+    "z": 6000,
+    "height": 235,
+    "width": 750,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_sessoes"
+                    }
+                  },
+                  "Property": "device_category"
+                }
+              },
+              "queryRef": "gold vw_sessoes.device_category",
+              "nativeQueryRef": "device_category",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Sessões Válidas"
+                }
+              },
+              "queryRef": "Medidas.Sessões Válidas",
+              "nativeQueryRef": "Sessões Válidas"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Sessões Válidas"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "cc1972bf9ec9e3d41637",
+        "type": "Exclude",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "g",
+              "Entity": "gold vw_sessoes",
+              "Type": 0
+            },
+            {
+              "Name": "d",
+              "Entity": "dRegiao",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Or": {
+                      "Left": {
+                        "Or": {
+                          "Left": {
+                            "Or": {
+                              "Left": {
+                                "In": {
+                                  "Expressions": [
+                                    {
+                                      "Column": {
+                                        "Expression": {
+                                          "SourceRef": {
+                                            "Source": "g"
+                                          }
+                                        },
+                                        "Property": "country"
+                                      }
+                                    }
+                                  ],
+                                  "Values": [
+                                    [
+                                      {
+                                        "Literal": {
+                                          "Value": "'(not set)'"
+                                        }
+                                      }
+                                    ]
+                                  ]
+                                }
+                              },
+                              "Right": {
+                                "In": {
+                                  "Expressions": [
+                                    {
+                                      "Column": {
+                                        "Expression": {
+                                          "SourceRef": {
+                                            "Source": "g"
+                                          }
+                                        },
+                                        "Property": "city"
+                                      }
+                                    }
+                                  ],
+                                  "Values": [
+                                    [
+                                      {
+                                        "Literal": {
+                                          "Value": "'(not set)'"
+                                        }
+                                      }
+                                    ]
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "Right": {
+                            "In": {
+                              "Expressions": [
+                                {
+                                  "Column": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "d"
+                                      }
+                                    },
+                                    "Property": "estado"
+                                  }
+                                }
+                              ],
+                              "Values": [
+                                [
+                                  {
+                                    "Literal": {
+                                      "Value": "''"
+                                    }
+                                  }
+                                ]
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "Right": {
+                        "In": {
+                          "Expressions": [
+                            {
+                              "Column": {
+                                "Expression": {
+                                  "SourceRef": {
+                                    "Source": "d"
+                                  }
+                                },
+                                "Property": "estado"
+                              }
+                            }
+                          ],
+                          "Values": [
+                            [
+                              {
+                                "Literal": {
+                                  "Value": "null"
+                                }
+                              }
+                            ]
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "Exclude"
+      }
+    ]
+  }
+}

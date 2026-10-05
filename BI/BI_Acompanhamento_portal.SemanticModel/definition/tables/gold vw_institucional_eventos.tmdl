@@ -1,0 +1,91 @@
+table 'gold vw_institucional_eventos'
+	lineageTag: 6b9a90fc-6bab-4497-8557-5da161002a05
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: f0dbdd76-a1bc-466a-9cf1-318937d5aba9
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column event_name
+		dataType: string
+		lineageTag: 0a66eab5-5d27-4615-84c0-c1f922f05aa1
+		summarizeBy: none
+		sourceColumn: event_name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: cabcd61a-2b82-4f66-bef3-fa84ce17a29a
+		summarizeBy: none
+		sourceColumn: country
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column device_category
+		dataType: string
+		lineageTag: 7815e7f6-f146-4440-b4dc-aa454248c00e
+		summarizeBy: none
+		sourceColumn: device_category
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column eventos
+		dataType: double
+		lineageTag: 37fc9bb7-2d8e-4e3e-b3a7-144c548cf00c
+		summarizeBy: none
+		sourceColumn: eventos
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column usuarios
+		dataType: double
+		lineageTag: 67c2992e-96fa-45ce-9625-799f79318b84
+		summarizeBy: sum
+		sourceColumn: usuarios
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column region
+		dataType: string
+		lineageTag: 5d294431-97ac-48b9-a588-d6297a0c173a
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'gold vw_institucional_eventos' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_institucional_eventos = Fonte{[Schema="gold",Item="vw_institucional_eventos"]}[Data]
+				in
+				    gold_vw_institucional_eventos
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

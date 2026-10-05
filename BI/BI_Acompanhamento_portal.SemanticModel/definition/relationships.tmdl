@@ -1,0 +1,45 @@
+relationship 5756338b-a7f2-4a02-845d-73c4fa8e8085
+	joinOnDateBehavior: datePartOnly
+	fromColumn: dCalendario.Date
+	toColumn: LocalDateTable_4e218720-95af-4d20-8acd-9b001a99e473.Date
+
+relationship 'gold vw_paineis_ranking_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_paineis_ranking'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_engajamento_dispositivo_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_engajamento_dispositivo'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_sessoes_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_sessoes'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_site_overview_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_site_overview'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_qualidade_trafego_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_qualidade_trafego'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_institucional_eventos_event_date_dCalendario_Date'
+	fromColumn: 'gold vw_institucional_eventos'.event_date
+	toColumn: dCalendario.Date
+
+relationship 'gold vw_sessoes_site_dSite_site'
+	fromColumn: 'gold vw_sessoes'.site
+	toColumn: dSite.site
+
+relationship 'gold vw_site_overview_site_dSite_site'
+	fromColumn: 'gold vw_site_overview'.site
+	toColumn: dSite.site
+
+relationship 'gold vw_qualidade_trafego_site_dSite_site'
+	fromColumn: 'gold vw_qualidade_trafego'.site
+	toColumn: dSite.site
+
+relationship 'gold vw_sessoes_region_dRegiao_region_ga4'
+	fromColumn: 'gold vw_sessoes'.region
+	toColumn: dRegiao.region_ga4
+

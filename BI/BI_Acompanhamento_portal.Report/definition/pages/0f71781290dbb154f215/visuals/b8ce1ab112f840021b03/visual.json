@@ -1,0 +1,89 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "b8ce1ab112f840021b03",
+  "position": {
+    "x": 780,
+    "y": 522.5,
+    "z": 3000,
+    "height": 530,
+    "width": 1116.25,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "hundredPercentStackedColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "gold vw_engajamento_dispositivo"
+                    }
+                  },
+                  "Property": "painel"
+                }
+              },
+              "queryRef": "gold vw_engajamento_dispositivo.painel",
+              "nativeQueryRef": "painel",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Acessos Desktop"
+                }
+              },
+              "queryRef": "Medidas.Acessos Desktop",
+              "nativeQueryRef": "Acessos Desktop"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Acessos Mobile"
+                }
+              },
+              "queryRef": "Medidas.Acessos Mobile",
+              "nativeQueryRef": "Acessos Mobile"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Acessos Desktop"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

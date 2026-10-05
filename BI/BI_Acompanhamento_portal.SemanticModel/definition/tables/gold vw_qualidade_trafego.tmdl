@@ -1,0 +1,81 @@
+table 'gold vw_qualidade_trafego'
+	lineageTag: 8d573ed1-3943-476f-8123-1ca5de8dcef7
+
+	column event_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 94f025bb-aa4a-47c1-879d-b86de881d03d
+		summarizeBy: none
+		sourceColumn: event_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column site
+		dataType: string
+		lineageTag: 14fdcbca-cbdc-4f86-8b03-a3b1d54f81c4
+		summarizeBy: none
+		sourceColumn: site
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 13e61a33-9017-4a1b-a982-a0c8f82a430e
+		summarizeBy: none
+		sourceColumn: country
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column sessoes_validas
+		dataType: double
+		lineageTag: 7bf25e94-16ee-44b4-ac3f-0bc76554371b
+		summarizeBy: sum
+		sourceColumn: sessoes_validas
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sessoes_descartadas
+		dataType: double
+		lineageTag: 0c23b9b4-3dfb-4ba3-8944-840b9ebf09b4
+		summarizeBy: sum
+		sourceColumn: sessoes_descartadas
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column region
+		dataType: string
+		lineageTag: c5ba9429-57cc-4765-8d64-b50da876b847
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'gold vw_qualidade_trafego' = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database("localhost", "abcs_marketing_analytics"),
+				    gold_vw_qualidade_trafego = Fonte{[Schema="gold",Item="vw_qualidade_trafego"]}[Data]
+				in
+				    gold_vw_qualidade_trafego
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navegação
+

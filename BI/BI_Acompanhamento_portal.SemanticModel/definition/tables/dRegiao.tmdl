@@ -1,0 +1,77 @@
+table dRegiao
+	lineageTag: dd57ea7f-bc8a-4107-9b8f-c05244ff82da
+
+	column region_ga4
+		lineageTag: 46325984-fc1f-4f2e-b786-d8877aa31aee
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [region_ga4]
+
+		annotation SummarizationSetBy = Automatic
+
+	column estado
+		lineageTag: 4b1677bf-ede5-403a-b600-5ed837a03248
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [estado]
+
+		annotation SummarizationSetBy = Automatic
+
+	column uf
+		lineageTag: 94032356-1b9d-49fc-9250-3f2d93e67156
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [uf]
+
+		annotation SummarizationSetBy = Automatic
+
+	column pais
+		lineageTag: f07608eb-ad72-41ee-9190-1d25d24f01d0
+		dataCategory: Country
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [pais]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dRegiao = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "region_ga4", STRING, "estado", STRING, "uf", STRING, "pais", STRING,
+				    {
+				        {"State of Sao Paulo","São Paulo","SP","Brazil"},
+				        {"State of Minas Gerais","Minas Gerais","MG","Brazil"},
+				        {"State of Parana","Paraná","PR","Brazil"},
+				        {"State of Rio Grande do Sul","Rio Grande do Sul","RS","Brazil"},
+				        {"State of Santa Catarina","Santa Catarina","SC","Brazil"},
+				        {"State of Goias","Goiás","GO","Brazil"},
+				        {"State of Bahia","Bahia","BA","Brazil"},
+				        {"State of Mato Grosso","Mato Grosso","MT","Brazil"},
+				        {"State of Mato Grosso do Sul","Mato Grosso do Sul","MS","Brazil"},
+				        {"State of Rio de Janeiro","Rio de Janeiro","RJ","Brazil"},
+				        {"State of Rondonia","Rondônia","RO","Brazil"},
+				        {"State of Ceara","Ceará","CE","Brazil"},
+				        {"Ceara","Ceará","CE","Brazil"},
+				        {"State of Pernambuco","Pernambuco","PE","Brazil"},
+				        {"State of Maranhao","Maranhão","MA","Brazil"},
+				        {"State of Para","Pará","PA","Brazil"},
+				        {"State of Paraiba","Paraíba","PB","Brazil"},
+				        {"State of Espirito Santo","Espírito Santo","ES","Brazil"},
+				        {"State of Alagoas","Alagoas","AL","Brazil"},
+				        {"State of Piaui","Piauí","PI","Brazil"},
+				        {"State of Rio Grande do Norte","Rio Grande do Norte","RN","Brazil"},
+				        {"State of Tocantins","Tocantins","TO","Brazil"},
+				        {"State of Sergipe","Sergipe","SE","Brazil"},
+				        {"Federal District","Distrito Federal","DF","Brazil"},
+				        {"State of Roraima","Roraima","RR","Brazil"},
+				        {"State of Amapa","Amapá","AP","Brazil"},
+				        {"State of Acre","Acre","AC","Brazil"},
+				        {"State of Amazonas","Amazonas","AM","Brazil"},
+				        {"(not set)","","",""}
+				    }
+				)
+
+	annotation PBI_Id = 9a2635c31dc044ba9fecd1e0e9d5e917
+

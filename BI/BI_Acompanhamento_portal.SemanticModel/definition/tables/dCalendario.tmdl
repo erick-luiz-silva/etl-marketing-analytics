@@ -1,0 +1,93 @@
+table dCalendario
+	lineageTag: aa35f6d3-afb1-440b-aa5c-04f6362f5334
+
+	column Date
+		formatString: General Date
+		lineageTag: 9acef7ff-b355-4471-8157-6a52ac068a9d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		variation Variation
+			isDefault
+			relationship: 5756338b-a7f2-4a02-845d-73c4fa8e8085
+			defaultHierarchy: LocalDateTable_4e218720-95af-4d20-8acd-9b001a99e473.'Hierarquia de datas'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ano
+		formatString: 0
+		lineageTag: 014466cc-965b-4735-9661-c5caeaa51105
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Ano]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Número do Mês'
+		formatString: 0
+		lineageTag: 1e59cce1-7dcb-4c5a-b91a-7cbb2c2ff5b8
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Número do Mês]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Mês
+		lineageTag: 6b7f5cf9-59c8-4f68-892c-2aaa51421b1e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Mês]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mês e Ano'
+		lineageTag: e1046308-99f3-4252-a0b0-887dc7dd1599
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Mês e Ano]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Trimestre
+		lineageTag: 8bc0a62b-2c08-40b9-b1c0-3d04d0ae7173
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Trimestre]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Dia da Semana'
+		formatString: 0
+		lineageTag: 6d13ff0e-11b5-4e8f-9646-f043610af57d
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Dia da Semana]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Nome do Dia'
+		lineageTag: b7ebac0b-f92f-4b2d-a6ca-689739802ff1
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Nome do Dia]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dCalendario = calculated
+		mode: import
+		source =
+				
+				ADDCOLUMNS(
+				    CALENDAR(DATE(2023, 1, 1), DATE(2026, 12, 31)),
+				    "Ano", YEAR([Date]),
+				    "Número do Mês", MONTH([Date]),
+				    "Mês", FORMAT([Date], "mmm", "pt-BR"),
+				    "Mês e Ano", FORMAT([Date], "mmm/yyyy", "pt-BR"),
+				    "Trimestre", "T" & FORMAT([Date], "Q"),
+				    "Dia da Semana", WEEKDAY([Date]),
+				    "Nome do Dia", FORMAT([Date], "dddd", "pt-BR")
+				)
+
+	annotation PBI_Id = 1e89fdeeedaa46eca8ff8cdb5bc38ffb
+

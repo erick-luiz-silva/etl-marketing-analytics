@@ -1,0 +1,17 @@
+table dSite
+	lineageTag: 86a468f0-d4c9-40ab-aa9a-5e90e3386e81
+
+	column site
+		lineageTag: d0f014f7-42d7-48f3-ae16-233f697e9a22
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [site]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dSite = calculated
+		mode: import
+		source = DATATABLE("site", STRING, {{"Data Insights"}, {"Institucional"}})
+
+	annotation PBI_Id = 5f8dd22834784927b3e05bd5ff8b5835
+
