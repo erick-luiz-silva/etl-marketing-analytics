@@ -2,11 +2,14 @@
 Gera os entregáveis semanais a partir das views gold do Postgres:
   - abcs_weekly_onepage_v2.html / .pdf  — relatório completo (1 página A4)
   - resumo_semana.txt                   — texto pronto para WhatsApp
-  - resumo_semana.png                   — card/print para WhatsApp (1080x1350)
 
 - Semana de referência = última segunda→domingo completa (ou --fim <domingo>).
 - Compara com a semana anterior.
-- Medidas espelham BI/info_medidas.csv (mesmas fórmulas, em SQL).
+- Foco em usuários e médias: WAU (usuários únicos seg–dom), DAU médio, MAU
+  (28 dias móveis), sessões por dia, visitas por usuário e tempo por sessão.
+  Tráfego robótico já vem descontado nas views gold e não aparece no relatório.
+- Recusa gerar se a semana ainda não está completa na base (ver
+  verificar_completude); --forcar ignora a checagem.
 
 Uso:
     python report/gerar_relatorio.py                 # última semana fechada
@@ -20,7 +23,7 @@ import os
 import shutil
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -29,13 +32,15 @@ from db import get_connection  # noqa: E402
 
 REPORT_DIR = _ROOT / "report"
 TEMPLATE = REPORT_DIR / "template_weekly.html"
-TEMPLATE_RESUMO = REPORT_DIR / "template_resumo.html"
 SAIDA_PADRAO = REPORT_DIR / "abcs_weekly_onepage_v2.html"
 RESUMO_TXT_PADRAO = REPORT_DIR / "resumo_semana.txt"
-RESUMO_PNG_PADRAO = REPORT_DIR / "resumo_semana.png"
 LOGO = REPORT_DIR / "logo_abcs_png" / "ABCS-Horizontal-1.png"
 
 DATA_INICIO_PAINEIS = date(2026, 8, 27)  # eventos painel_acessado reais
+
+# A GA4 só fecha o dia D por volta do meio-dia de D+1 (testes/ACHADOS.md, teste 6):
+# o domingo só conta como completo se foi extraído depois disso.
+HORA_DIA_FECHADO = time(12, 0)
 
 MESES = ["", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
          "agosto", "setembro", "outubro", "novembro", "dezembro"]
@@ -68,14 +73,21 @@ def n(v):
     return f"{int(round(v or 0)):,}".replace(",", ".")
 
 
+def dec(v, casas=1):
+    return f"{v or 0:.{casas}f}".replace(".", ",")
+
+
 def pct(num, den, casas=0):
     if not den:
         return "—"
     return f"{100 * num / den:.{casas}f}%".replace(".", ",")
 
 
-def seg(v):
-    return f"{v:.0f} s" if v else "—"
+def tempo(segundos):
+    if not segundos:
+        return "—"
+    m, s = divmod(int(round(segundos)), 60)
+    return f"{m} min {s:02d} s" if m else f"{s} s"
 
 
 def pais_pt(x):
@@ -110,56 +122,78 @@ def delta_html(var):
     return f'<div class="delta {cls}">{seta} {abs(var) * 100:.0f}% vs semana ant.</div>'
 
 
-def delta_card_html(var):
-    if var is None:
-        return '<div class="stat-delta new">sem base de comparação</div>'
-    if abs(var) < 0.03:
-        return '<div class="stat-delta flat">estável vs. semana anterior</div>'
-    cls, seta = ("up", "↑") if var > 0 else ("dn", "↓")
-    return f'<div class="stat-delta {cls}">{seta} {abs(var) * 100:.0f}% vs. semana anterior</div>'
-
-
 def construir_tldr(di_var, inst_var, negrito):
     partes = []
     if di_var is not None and abs(di_var) >= 0.10:
-        partes.append(f"o Data Insights {'cresceu' if di_var > 0 else 'caiu'} "
-                       f"{negrito(f'{abs(di_var) * 100:.0f}%')}")
+        partes.append(f"o Data Insights {'ganhou' if di_var > 0 else 'perdeu'} "
+                      f"{negrito(f'{abs(di_var) * 100:.0f}%')} de usuários")
     if inst_var is not None and abs(inst_var) >= 0.10:
-        partes.append(f"o Institucional {'cresceu' if inst_var > 0 else 'caiu'} "
-                       f"{negrito(f'{abs(inst_var) * 100:.0f}%')}")
+        partes.append(f"o Institucional {'ganhou' if inst_var > 0 else 'perdeu'} "
+                      f"{negrito(f'{abs(inst_var) * 100:.0f}%')} de usuários")
     if partes:
         return "Esta semana, " + " e ".join(partes) + " frente à semana anterior."
-    return "Semana estável nos dois portais — sem grandes variações frente à anterior."
+    return "Semana estável nos dois portais — sem grandes variações de público frente à anterior."
 
 
 # ---------- consultas ----------
 
+def verificar_completude(cur, dom):
+    """Lista o que falta para a semana terminada em `dom` estar completa na base."""
+    limite = datetime.combine(dom + timedelta(days=1), HORA_DIA_FECHADO)
+    problemas = []
+    for rotulo, tabela in (("uso do site", "silver.ga4_eventos"),
+                           ("usuários ativos", "silver.ga4_usuarios")):
+        cur.execute(f"SELECT max(event_date) FROM {tabela};")
+        ultima = cur.fetchone()[0]
+        if ultima is None or ultima < dom:
+            problemas.append(f"{rotulo}: dados só até {ultima or '—'} (precisa de {dom})")
+            continue
+        cur.execute(f"SELECT max(data_extracao) FROM {tabela} WHERE event_date = %s;", (dom,))
+        extraido = cur.fetchone()[0]
+        if extraido is None or extraido < limite:
+            problemas.append(f"{rotulo}: {dom} extraído em {extraido:%d/%m %H:%M}, antes de "
+                             f"{limite:%d/%m %H:%M} — dia possivelmente incompleto na GA4")
+    return problemas
+
+
 def kpis_portal(cur, site, ini, fim):
+    # Tudo de gold.vw_usuarios_ativos, no mesmo recorte de bot: sessões/tempo da
+    # semana vêm das colunas *_7d do domingo, que usam a mesma regra do wau.
     cur.execute(
         """
-        SELECT COALESCE(SUM(sessoes),0), COALESCE(SUM(usuarios),0),
-               COALESCE(SUM(sessoes_engajadas),0), COALESCE(SUM(tempo_engajamento_s),0)
-        FROM gold.vw_site_overview
-        WHERE site = %s AND event_date BETWEEN %s AND %s;
+        SELECT event_date, COALESCE(SUM(dau),0), COALESCE(SUM(wau),0), COALESCE(SUM(mau),0),
+               COALESCE(SUM(sessoes_7d),0), COALESCE(SUM(sessoes_engajadas_7d),0),
+               COALESCE(SUM(tempo_engajamento_7d_s),0)
+        FROM gold.vw_usuarios_ativos
+        WHERE site = %s AND event_date BETWEEN %s AND %s
+        GROUP BY 1;
         """,
         (site, ini, fim),
     )
-    ses, us, eng, tempo = cur.fetchone()
+    por_dia = {r[0]: [float(x) for x in r[1:]] for r in cur.fetchall()}
+    dias = (fim - ini).days + 1
+    _, wau, mau, ses, eng, tempo_total = por_dia.get(fim, [0] * 6)  # janelas móveis: vale o último dia
+    dau_dia = [por_dia.get(ini + timedelta(days=i), [0] * 6)[0] for i in range(dias)]
     return {
-        "sessoes": ses, "usuarios": us, "engajadas": eng, "tempo_total": tempo,
-        "tempo_medio": (tempo / ses) if ses else 0,
+        "sessoes": ses, "engajadas": eng,
+        "sessoes_dia": ses / dias,
+        "tempo_sessao": (tempo_total / ses) if ses else 0,
+        "wau": wau, "mau": mau,
+        "dau_dia": dau_dia,
+        "dau_medio": sum(dau_dia) / dias,
+        "visitas_usuario": (ses / wau) if wau else 0,
     }
 
 
-def top_paises(cur, ini, fim, limite=5):
+def top_paises(cur, dom, limite=5):
     cur.execute(
         """
-        SELECT country, COALESCE(SUM(sessoes),0) FROM gold.vw_site_overview
-        WHERE event_date BETWEEN %s AND %s
-        GROUP BY 1 HAVING COALESCE(SUM(sessoes),0) > 0
+        SELECT country, SUM(wau) FROM gold.vw_usuarios_ativos
+        WHERE event_date = %s
+        GROUP BY 1 HAVING COALESCE(SUM(wau),0) > 0
         ORDER BY 2 DESC LIMIT %s;
         """,
-        (ini, fim, limite),
+        (dom, limite),
     )
     return [(pais_pt(c), int(v)) for c, v in cur.fetchall()]
 
@@ -178,25 +212,27 @@ def top_estados(cur, ini, fim, limite=5):
     return [(estado_pt(c), int(v)) for c, v in cur.fetchall()]
 
 
-def devices_data_insights(cur, ini, fim):
+def devices_data_insights(cur, dom):
     cur.execute(
         """
-        SELECT device_category, COALESCE(SUM(sessoes),0) FROM gold.vw_site_overview
-        WHERE site = 'Data Insights' AND event_date BETWEEN %s AND %s
-        GROUP BY 1 HAVING COALESCE(SUM(sessoes),0) > 0
+        SELECT device_category, SUM(wau) FROM gold.vw_usuarios_ativos
+        WHERE site = 'Data Insights' AND event_date = %s
+        GROUP BY 1 HAVING COALESCE(SUM(wau),0) > 0
         ORDER BY 2 DESC;
         """,
-        (ini, fim),
+        (dom,),
     )
     return [(DEVICE_PT.get(d, d), int(v)) for d, v in cur.fetchall()]
 
 
 def paineis_semana(cur, ini, fim):
+    # Só painel_acessado: painel_clicado dispara junto em /relatorios/ e somar os
+    # dois conta o mesmo acesso duas vezes (testes/ACHADOS.md).
     cur.execute(
         """
         SELECT painel, tema, SUM(acessos), SUM(sessoes_engajadas), SUM(sessoes)
         FROM gold.vw_paineis_ranking
-        WHERE event_date BETWEEN %s AND %s
+        WHERE event_date BETWEEN %s AND %s AND event_name = 'painel_acessado'
         GROUP BY 1, 2
         ORDER BY 3 DESC, SUM(sessoes_engajadas) DESC, 1 ASC;
         """,
@@ -207,17 +243,6 @@ def paineis_semana(cur, ini, fim):
          "engajadas": int(e), "sessoes": int(s)}
         for p, t, a, e, s in cur.fetchall()
     ]
-
-
-def qualidade(cur, ini, fim):
-    cur.execute(
-        """
-        SELECT COALESCE(SUM(sessoes_validas),0), COALESCE(SUM(sessoes_descartadas),0)
-        FROM gold.vw_qualidade_trafego WHERE event_date BETWEEN %s AND %s;
-        """,
-        (ini, fim),
-    )
-    return cur.fetchone()
 
 
 # ---------- montagem de fragmentos (relatório completo) ----------
@@ -254,6 +279,19 @@ def device_rows(itens):
             f'<span class="dev-pct">{p:.0f}%</span></div>'
         )
     return "".join(out) or '<div style="font-size:10px;color:#9aa39d">sem dados</div>'
+
+
+def dias_rows(dau_dia):
+    topo = max(dau_dia) or 1
+    out = []
+    for nome, v in zip(DIAS_SEM, dau_dia):
+        out.append(
+            f'<div class="dev-item"><span class="dev-name">{nome}</span>'
+            f'<div class="dev-bar-bg"><div class="dev-bar" style="width:{100 * v / topo:.0f}%;'
+            f'background:var(--verde)"></div></div>'
+            f'<span class="dev-pct">{n(v)}</span></div>'
+        )
+    return "".join(out)
 
 
 def painel_rows(paineis, limite=6):
@@ -293,7 +331,7 @@ def logo_data_uri():
     return "data:image/png;base64," + base64.b64encode(LOGO.read_bytes()).decode()
 
 
-# ---------- navegador headless (PDF + PNG) ----------
+# ---------- navegador headless (PDF) ----------
 
 def _achar_navegador():
     for nome in ("chrome", "google-chrome", "chromium", "msedge"):
@@ -333,24 +371,6 @@ def gerar_pdf(html_path, pdf_path):
     return False
 
 
-def gerar_png(html_path, png_path, largura, altura):
-    navegador = _achar_navegador()
-    if not navegador:
-        print("  ! Chrome/Edge não encontrado — imagem do resumo não gerada.")
-        return False
-    cmd = [
-        navegador, "--headless", "--disable-gpu", "--hide-scrollbars",
-        f"--window-size={largura},{altura}",
-        f"--screenshot={png_path}", _url_arquivo(html_path),
-    ]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    if png_path.exists() and png_path.stat().st_size > 2000:
-        print(f"Gerado: {png_path}  ({png_path.stat().st_size // 1024} KB) — via {Path(navegador).name}")
-        return True
-    print(f"  ! Falha ao gerar imagem (rc={r.returncode}). {r.stderr[-300:]}")
-    return False
-
-
 # ---------- coleta de dados ----------
 
 def semana_referencia(fim_arg):
@@ -363,24 +383,31 @@ def semana_referencia(fim_arg):
     return seg_, dom
 
 
-def coletar_dados(fim_arg):
+def coletar_dados(fim_arg, forcar=False):
     seg_, dom = semana_referencia(fim_arg)
     seg_ant, dom_ant = seg_ - timedelta(days=7), dom - timedelta(days=7)
     print(f"Semana de referência : {seg_} a {dom}")
     print(f"Semana de comparação : {seg_ant} a {dom_ant}")
 
     with get_connection() as conn, conn.cursor() as cur:
+        problemas = verificar_completude(cur, dom)
+        if problemas:
+            print("\n! Semana incompleta na base:")
+            for p in problemas:
+                print(f"  - {p}")
+            if not forcar:
+                sys.exit("Rode o pipeline (src/pipeline.py) e tente de novo, "
+                         "ou use --forcar para gerar mesmo assim.")
+            print("  --forcar: gerando mesmo assim.\n")
         di = kpis_portal(cur, "Data Insights", seg_, dom)
         di_ant = kpis_portal(cur, "Data Insights", seg_ant, dom_ant)
         inst = kpis_portal(cur, "Institucional", seg_, dom)
         inst_ant = kpis_portal(cur, "Institucional", seg_ant, dom_ant)
-        paises = top_paises(cur, seg_, dom)
+        paises = top_paises(cur, dom)
         estados = top_estados(cur, seg_, dom)
-        devices = devices_data_insights(cur, seg_, dom)
+        devices = devices_data_insights(cur, dom)
         paineis = paineis_semana(cur, seg_, dom)
-        val, desc = qualidade(cur, seg_, dom)
 
-    bruto = (val or 0) + (desc or 0)
     tema_tot = sum(p["acessos"] for p in paineis) or 1
     temas = {}
     for p in paineis:
@@ -390,50 +417,47 @@ def coletar_dados(fim_arg):
     return {
         "seg": seg_, "dom": dom, "seg_ant": seg_ant, "dom_ant": dom_ant,
         "di": di, "di_ant": di_ant, "inst": inst, "inst_ant": inst_ant,
-        "di_var": variacao(di["sessoes"], di_ant["sessoes"]),
-        "inst_var": variacao(inst["sessoes"], inst_ant["sessoes"]),
+        "di_var": variacao(di["wau"], di_ant["wau"]),
+        "inst_var": variacao(inst["wau"], inst_ant["wau"]),
         "paises": paises, "estados": estados, "devices": devices,
-        "paineis": paineis, "val": val, "desc": desc, "bruto": bruto,
+        "paineis": paineis,
         "tema_top": tema_top, "tema_top_ac": tema_top_ac, "tema_tot": tema_tot,
     }
 
 
 # ---------- geração: relatório completo ----------
 
+def _kpis_html(prefixo, k, var):
+    return {
+        f"{{{{{prefixo}_WAU}}}}": n(k["wau"]),
+        f"{{{{{prefixo}_DELTA}}}}": delta_html(var),
+        f"{{{{{prefixo}_DAU}}}}": n(k["dau_medio"]),
+        f"{{{{{prefixo}_MAU}}}}": n(k["mau"]),
+        f"{{{{{prefixo}_SES_DIA}}}}": n(k["sessoes_dia"]),
+        f"{{{{{prefixo}_VISITAS_USU}}}}": dec(k["visitas_usuario"]),
+        f"{{{{{prefixo}_TEMPO}}}}": tempo(k["tempo_sessao"]),
+        f"{{{{{prefixo}_ENGAJ_PCT}}}}": pct(k["engajadas"], k["sessoes"]),
+    }
+
+
 def gerar_html(d, saida):
     seg_, dom = d["seg"], d["dom"]
-    di, inst = d["di"], d["inst"]
-    paineis, desc, bruto = d["paineis"], d["desc"], d["bruto"]
+    di, inst, paineis = d["di"], d["inst"], d["paineis"]
     nomes_top = ", ".join(p["painel"] for p in paineis[:3])
-    di_taxa = pct(di["engajadas"], di["sessoes"])
+    frequencia = pct(di["dau_medio"], di["wau"])
 
     subs = {
         "{{LOGO_DATA_URI}}": logo_data_uri(),
         "{{PERIODO_LONGO}}": periodo_longo(seg_, dom),
-        "{{PROX_RELATORIO}}": f"{(dom + timedelta(days=7)):%d/%m/%Y}",
+        "{{PROX_RELATORIO}}": f"{(dom + timedelta(days=8)):%d/%m/%Y}",
         "{{NOTICE}}": notice_html(seg_, dom),
-
-        "{{DI_ACESSOS}}": n(di["sessoes"]),
-        "{{DI_ENGAJ_PCT}}": di_taxa,
-        "{{DI_USUARIOS}}": n(di["usuarios"]),
-        "{{DI_TEMPO}}": seg(di["tempo_medio"]),
-        "{{DI_DELTA}}": delta_html(d["di_var"]),
-
-        "{{INST_ACESSOS}}": n(inst["sessoes"]),
-        "{{INST_ENGAJ_PCT}}": pct(inst["engajadas"], inst["sessoes"]),
-        "{{INST_USUARIOS}}": n(inst["usuarios"]),
-        "{{INST_TEMPO}}": seg(inst["tempo_medio"]),
-        "{{INST_DELTA}}": delta_html(d["inst_var"]),
+        **_kpis_html("DI", di, d["di_var"]),
+        **_kpis_html("INST", inst, d["inst_var"]),
 
         "{{PAISES_ROWS}}": rank_rows(d["paises"]),
         "{{ESTADOS_ROWS}}": rank_rows(d["estados"]),
         "{{DEVICE_ROWS}}": device_rows(d["devices"]),
-
-        "{{QT_VALIDAS}}": n(d["val"]),
-        "{{QT_BOTS}}": n(desc),
-        "{{QT_BOT_PCT}}": pct(desc, bruto, 1),
-        "{{QT_REAL_PCT}}": pct(d["val"], bruto, 1),
-        "{{QT_REAL_PCT_W}}": f"{max(1, round(100 * (d['val'] or 0) / (bruto or 1)))}",
+        "{{DIAS_ROWS}}": dias_rows(di["dau_dia"]),
 
         "{{TEMA_TOP}}": d["tema_top"],
         "{{TEMA_PCT}}": pct(d["tema_top_ac"], d["tema_tot"]),
@@ -441,17 +465,16 @@ def gerar_html(d, saida):
                           if nomes_top else "Sem acessos de painel registrados na semana."),
         "{{PAINEIS_ROWS}}": painel_rows(paineis),
 
-        "{{HIGHLIGHT_PCT}}": di_taxa,
+        "{{HIGHLIGHT_VAL}}": dec(di["visitas_usuario"]),
         "{{HIGHLIGHT_SUB}}": (
-            f"De {n(di['sessoes'])} sessões no ABCS Data Insights, "
-            f"{n(di['engajadas'])} foram engajadas — o público que chega à "
-            f"plataforma explora os dados do setor em vez de sair na hora."
+            f"Os {n(di['wau'])} usuários do ABCS Data Insights fizeram {n(di['sessoes'])} "
+            f"visitas na semana. Em média, {n(di['dau_medio'])} pessoas acessaram por dia "
+            f"({frequencia} do público da semana)."
         ),
 
         "{{FONTE_NOTA}}": (
-            f"Período: {seg_:%d/%m} a {dom:%d/%m/%Y} · "
-            f"Bots excluídos ({pct(desc, bruto, 1)} do tráfego bruto da semana) · "
-            f"Fonte: GA4 via pipeline ABCS Analytics"
+            f"Período: {seg_:%d/%m} a {dom:%d/%m/%Y} · Usuários no mês = últimos 28 dias até "
+            f"{dom:%d/%m} · Fonte: GA4 via pipeline ABCS Analytics"
         ),
     }
 
@@ -460,27 +483,37 @@ def gerar_html(d, saida):
         html = html.replace(k, v)
     saida.write_text(html, encoding="utf-8")
     print(f"\nGerado: {saida}")
-    print(f"  Data Insights : {n(di['sessoes'])} sessões ({di_taxa} engajadas)")
-    print(f"  Institucional : {n(inst['sessoes'])} sessões")
-    print(f"  Bots na semana: {pct(desc, bruto, 1)}")
+    for nome, k in (("Data Insights", di), ("Institucional", inst)):
+        print(f"  {nome:14}: {n(k['wau'])} usuários na semana, {n(k['dau_medio'])}/dia, "
+              f"{n(k['mau'])} em 28 dias, {n(k['sessoes'])} sessões")
     print(f"  Painéis       : {len(paineis)} com acesso, {d['tema_tot']} acessos totais")
     return saida
 
 
 # ---------- geração: resumo para WhatsApp (texto) ----------
 
+def _bloco_portal(nome, k, var):
+    return [
+        f"🔹 *{nome}*",
+        f"   • *{n(k['wau'])}* usuários na semana ({frase_delta(var)})",
+        f"   • *{n(k['dau_medio'])}* usuários por dia, em média",
+        f"   • *{n(k['mau'])}* usuários nos últimos 28 dias",
+        f"   • {n(k['sessoes_dia'])} visitas por dia · {dec(k['visitas_usuario'])} visitas "
+        f"por usuário · {tempo(k['tempo_sessao'])} por visita",
+    ]
+
+
 def gerar_texto_resumo(d, saida_txt):
     seg_, dom = d["seg"], d["dom"]
-    di, inst, paineis = d["di"], d["inst"], d["paineis"]
+    paineis = d["paineis"]
 
     linhas = [
-        f"📊 *Resumo Semanal — Portal ABCS*",
+        "📊 *Resumo Semanal — Portal ABCS*",
         f"{seg_:%d/%m} a {dom:%d/%m/%Y}",
         "",
         construir_tldr(d["di_var"], d["inst_var"], negrito=lambda s: f"*{s}*"),
         "",
-        f"🔹 *ABCS Data Insights*: {n(di['sessoes'])} sessões reais "
-        f"({frase_delta(d['di_var'])}), {pct(di['engajadas'], di['sessoes'])} engajadas.",
+        *_bloco_portal("ABCS Data Insights", d["di"], d["di_var"]),
     ]
     if paineis:
         linhas.append("   Top 3 painéis da semana:")
@@ -491,11 +524,7 @@ def gerar_texto_resumo(d, saida_txt):
 
     linhas += [
         "",
-        f"🔹 *Site Institucional*: {n(inst['sessoes'])} sessões reais "
-        f"({frase_delta(d['inst_var'])}), {pct(inst['engajadas'], inst['sessoes'])} engajadas.",
-        "",
-        f"🤖 *{pct(d['desc'], d['bruto'], 1)}* do tráfego bruto da semana era robô e foi "
-        f"removido automaticamente antes dessas contagens.",
+        *_bloco_portal("Site Institucional", d["inst"], d["inst_var"]),
         "",
         "📎 Relatório completo em PDF em anexo.",
     ]
@@ -505,62 +534,7 @@ def gerar_texto_resumo(d, saida_txt):
     return saida_txt
 
 
-# ---------- geração: resumo para WhatsApp (imagem) ----------
-
-def paineis_top3_html(paineis):
-    if not paineis:
-        return ('<div class="panel-row"><span class="panel-name" style="color:#8a948e">'
-                'Sem acessos de painel na semana</span></div>')
-    out = []
-    for i, p in enumerate(paineis[:3], 1):
-        out.append(
-            f'<div class="panel-row"><span class="panel-num">{i}</span>'
-            f'<span class="panel-name">{p["painel"]}</span>'
-            f'<span class="panel-val">{n(p["acessos"])}</span></div>'
-        )
-    return "".join(out)
-
-
-def gerar_imagem_resumo(d, saida_png, largura=1080, altura=1040):
-    di, inst = d["di"], d["inst"]
-
-    subs = {
-        "{{LOGO_DATA_URI}}": logo_data_uri(),
-        "{{PERIODO_LONGO}}": periodo_longo(d["seg"], d["dom"]),
-        "{{TLDR}}": construir_tldr(d["di_var"], d["inst_var"], negrito=lambda s: f"<b>{s}</b>"),
-
-        "{{DI_ACESSOS}}": n(di["sessoes"]),
-        "{{DI_ENGAJ_PCT}}": pct(di["engajadas"], di["sessoes"]),
-        "{{DI_DELTA}}": delta_card_html(d["di_var"]),
-
-        "{{INST_ACESSOS}}": n(inst["sessoes"]),
-        "{{INST_ENGAJ_PCT}}": pct(inst["engajadas"], inst["sessoes"]),
-        "{{INST_DELTA}}": delta_card_html(d["inst_var"]),
-
-        "{{PAINEIS_TOP3}}": paineis_top3_html(d["paineis"]),
-        "{{BOT_PCT}}": pct(d["desc"], d["bruto"], 1),
-    }
-
-    html = TEMPLATE_RESUMO.read_text(encoding="utf-8")
-    for k, v in subs.items():
-        html = html.replace(k, v)
-
-    html_tmp = saida_png.with_suffix(".tmp.html")
-    html_tmp.write_text(html, encoding="utf-8")
-    try:
-        ok = gerar_png(html_tmp, saida_png, largura, altura)
-    finally:
-        html_tmp.unlink(missing_ok=True)
-    return saida_png if ok else None
-
-
 # ---------- main ----------
-
-def gerar(fim_arg, saida):
-    """Compatibilidade: coleta os dados e gera só o HTML do relatório completo."""
-    d = coletar_dados(fim_arg)
-    return gerar_html(d, saida)
-
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Entregáveis semanais ABCS (relatório + resumo WhatsApp)")
@@ -568,12 +542,13 @@ if __name__ == "__main__":
                     help="domingo de referência (ISO). Padrão: último domingo fechado")
     ap.add_argument("--saida", type=Path, default=SAIDA_PADRAO, help="HTML do relatório completo")
     ap.add_argument("--resumo-txt", type=Path, default=RESUMO_TXT_PADRAO)
-    ap.add_argument("--resumo-png", type=Path, default=RESUMO_PNG_PADRAO)
     ap.add_argument("--no-pdf", action="store_true", help="não gerar o PDF do relatório")
-    ap.add_argument("--no-resumo", action="store_true", help="não gerar o resumo (txt + png) para WhatsApp")
+    ap.add_argument("--no-resumo", action="store_true", help="não gerar o texto para WhatsApp")
+    ap.add_argument("--forcar", action="store_true",
+                    help="gera mesmo com a semana incompleta na base")
     args = ap.parse_args()
 
-    dados = coletar_dados(args.fim)
+    dados = coletar_dados(args.fim, args.forcar)
 
     html_path = gerar_html(dados, args.saida)
     if not args.no_pdf:
@@ -581,4 +556,3 @@ if __name__ == "__main__":
 
     if not args.no_resumo:
         gerar_texto_resumo(dados, args.resumo_txt)
-        gerar_imagem_resumo(dados, args.resumo_png)

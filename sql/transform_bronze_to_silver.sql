@@ -140,7 +140,7 @@ WITH ultimo_snapshot AS (
 )
 INSERT INTO silver.ga4_usuarios (
     event_date, hostname, site, country, device_category,
-    dau, wau, mau, sessions, engaged_sessions, data_extracao
+    dau, wau, mau, sessions, engaged_sessions, user_engagement_seconds, data_extracao
 )
 SELECT
     (elem->>'date')::date,
@@ -153,5 +153,6 @@ SELECT
     (elem->>'active28DayUsers')::bigint,
     (elem->>'sessions')::bigint,
     (elem->>'engagedSessions')::bigint,
+    (elem->>'userEngagementDuration')::numeric,
     s.data_extracao
 FROM ultimo_snapshot s, jsonb_array_elements(s.payload) elem;

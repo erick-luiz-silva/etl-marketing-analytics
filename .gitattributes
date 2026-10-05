@@ -1,0 +1,8 @@
+# Normaliza quebras de linha: o repositório é editado no WSL (LF) e no Windows
+# (cópia de produção e Power BI Desktop, CRLF). No git tudo fica LF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.pbix binary
+*.abf binary
+*.png binary
+*.pdf binary

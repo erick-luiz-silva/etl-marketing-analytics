@@ -90,9 +90,10 @@ CREATE TABLE IF NOT EXISTS silver.ga4_usuarios (
     dau              BIGINT,
     wau              BIGINT,
     mau              BIGINT,
-    sessions         BIGINT,
-    engaged_sessions BIGINT,
-    data_extracao    TIMESTAMP
+    sessions                BIGINT,
+    engaged_sessions        BIGINT,
+    user_engagement_seconds NUMERIC(14,2),
+    data_extracao           TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS ix_silver_ga4_usuarios_event_date ON silver.ga4_usuarios (event_date);
 

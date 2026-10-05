@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ABCS — Resumo Semanal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde-escuro:#00533a;
+  --verde:#09814a;
+  --verde-claro:#53af33;
+  --wash:#e8f3ec;
+  --wash-claro:#eef7e6;
+  --border:#e6e6e6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f5f4;color:#1a2a22;padding:16px}
+.page{max-width:920px;margin:0 auto;background:#fff;border:0.5px solid var(--border);border-radius:4px;overflow:hidden}
+.header{background:var(--verde-escuro);padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo-box{background:#fff;border-radius:6px;padding:7px 11px;display:flex;align-items:center}
+.logo-box img{height:26px;display:block}
+.header-title{color:#fff;font-size:16px;font-weight:500}
+.header-period{color:rgba(255,255,255,0.82);font-size:11.5px;margin-top:2px}
+.header-right{text-align:right}
+.header-badge{background:rgba(255,255,255,0.16);border-radius:20px;padding:4px 12px;font-size:10.5px;color:#fff;font-weight:500;margin-bottom:4px;display:inline-block}
+.header-note{font-size:10px;color:rgba(255,255,255,0.7)}
+.notice-bar{background:#fff8e1;border-bottom:1px solid #ffe082;padding:7px 22px;display:flex;align-items:flex-start;gap:8px}
+.notice-icon{font-size:13px;margin-top:1px;flex-shrink:0}
+.notice-text{font-size:10.5px;color:#5d4037;line-height:1.5}
+.notice-text strong{font-weight:600;color:#3e2723}
+.body{padding:14px 20px;display:grid;gap:12px}
+.section-label{font-size:9.5px;font-weight:600;letter-spacing:1.2px;color:var(--verde-escuro);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.section-label::after{content:'';flex:1;height:0.5px;background:var(--border)}
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi-card{border:0.5px solid #e8e8e8;border-radius:8px;padding:11px 14px;background:#fafafa;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--verde);border-radius:2px 0 0 2px}
+.kpi-card.inst::before{background:var(--verde-claro)}
+.kpi-card-label{font-size:10px;font-weight:600;letter-spacing:0.6px;color:var(--verde-escuro);text-transform:uppercase;margin-bottom:8px}
+.kpi-card.inst .kpi-card-label{color:var(--verde)}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 6px}
+.kpi-val{font-size:20px;font-weight:600;color:#1a2a22;line-height:1}
+.kpi-val.good{color:#1b5e20}
+.kpi-name{font-size:10px;color:#6b7770;margin-top:1px;line-height:1.3}
+.kpi-name em{font-style:normal;color:#9aa39d;font-size:9px}
+.delta{display:inline-flex;align-items:center;gap:2px;font-size:9.5px;font-weight:500;padding:1px 5px;border-radius:3px;margin-top:2px}
+.delta.up{background:#e8f5e9;color:#2e7d32}
+.delta.dn{background:#fce4ec;color:#c62828}
+.delta.new{background:var(--wash);color:var(--verde-escuro)}
+.delta.flat{background:#f0f0f0;color:#757575}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{border:0.5px solid #e8e8e8;border-radius:8px;padding:11px 14px;background:#fff}
+.mini-label{font-size:10px;color:#9aa39d;margin-bottom:6px;font-weight:500}
+.rank-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+.rank-item{display:grid;grid-template-columns:14px 1fr auto;gap:5px;align-items:center;font-size:11px}
+.rank-num{font-size:9.5px;font-weight:600;color:#c0c7c2;font-family:'DM Mono',monospace}
+.rank-name{color:#1a2a22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-val{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--verde);font-weight:500}
+.bar-bg{background:#eef0ee;border-radius:2px;height:3px;width:100%;margin-top:2px}
+.bar-fill{height:3px;border-radius:2px;background:var(--verde)}
+.donut-row{display:flex;flex-direction:column;gap:5px}
+.dev-item{display:grid;grid-template-columns:70px 1fr 38px;align-items:center;gap:6px;font-size:10.5px}
+.dev-name{color:#3f4a44;font-size:10.5px}
+.dev-bar-bg{background:#eef0ee;border-radius:2px;height:5px}
+.dev-bar{height:5px;border-radius:2px}
+.dev-pct{font-family:'DM Mono',monospace;font-size:10.5px;color:#1a2a22;font-weight:500;text-align:right}
+.accent-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.painel-table{width:100%;border-collapse:collapse;font-size:10.5px}
+.painel-table th{font-size:9px;font-weight:600;letter-spacing:0.5px;color:#9aa39d;text-transform:uppercase;padding:0 0 5px;border-bottom:0.5px solid #e8e8e8;text-align:left}
+.painel-table th:not(:first-child){text-align:right}
+.painel-table td{padding:4px 0;border-bottom:0.5px solid #f3f4f3;color:#1a2a22;vertical-align:middle}
+.painel-table td:not(:first-child){text-align:right;font-family:'DM Mono',monospace;font-size:10.5px;color:#3f4a44}
+.painel-table tr:first-child td{font-weight:500;color:var(--verde-escuro)}
+.painel-table tr:first-child td:not(:first-child){color:var(--verde-escuro)}
+.pct-bar{display:inline-block;width:24px;height:3px;border-radius:2px;background:#e8e8e8;vertical-align:middle;margin-right:3px;overflow:hidden}
+.pct-fill{height:3px;border-radius:2px}
+.tema-pill{display:inline-block;background:var(--wash);color:var(--verde-escuro);font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px}
+.highlight-box{background:var(--wash);border-radius:8px;padding:11px 14px;border:0.5px solid #a9d6bd}
+.highlight-big{font-size:24px;font-weight:600;color:var(--verde-escuro);line-height:1;margin-bottom:1px}
+.highlight-sub{font-size:10px;color:var(--verde);margin-top:4px;line-height:1.4}
+.glossary{background:#f8f9f8;border-radius:6px;padding:8px 12px;border-left:3px solid var(--verde);margin-top:2px}
+.glossary-title{font-size:9.5px;font-weight:600;color:var(--verde-escuro);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.glossary-item{font-size:10px;color:#555;margin-bottom:3px;line-height:1.4}
+.glossary-item strong{font-weight:600;color:#1a2a22}
+.footer{border-top:0.5px solid #e8e8e8;padding:8px 20px;display:flex;justify-content:space-between;align-items:center;background:#fafafa}
+.footer-note{font-size:9px;color:#9aa39d;line-height:1.5}
+.footer-next{font-size:9.5px;color:var(--verde-escuro);font-weight:500;text-align:right;flex-shrink:0;margin-left:12px}
+@media (max-width:640px){
+  .kpi-row,.two-col,.kpi-grid{grid-template-columns:1fr}
+  .header{flex-direction:column;align-items:flex-start;gap:10px}
+  .header-right{text-align:left}
+}
+@media print{
+  @page{size:A4 portrait;margin:8mm}
+  html,body{background:#fff;padding:0;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{max-width:none;width:100%;border:0;border-radius:0}
+  .body{padding:10px 14px;gap:9px}
+  .header,.kpi-card,.card,.highlight-box,.notice-bar,.glossary,.footer{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-box"><img src="{{LOGO_DATA_URI}}" alt="ABCS"></div>
+      <div>
+        <div class="header-title">Portal ABCS — Resumo Semanal</div>
+        <div class="header-period">{{PERIODO_LONGO}}</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-badge">Usuários e médias da semana</div>
+      <div class="header-note">Semana fechada, de segunda a domingo</div>
+    </div>
+  </div>
+
+  {{NOTICE}}
+
+  <div class="body">
+    <div>
+      <div class="section-label">Público da semana por portal</div>
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-card-label">ABCS Data Insights · abcsdata.abcs.org.br</div>
+<div class="kpi-grid">
+            <div>
+              <div class="kpi-val">{{DI_WAU}}</div>
+              <div class="kpi-name">Usuários na semana</div>
+              {{DI_DELTA}}
+            </div>
+            <div>
+              <div class="kpi-val">{{DI_DAU}}</div>
+              <div class="kpi-name">Usuários por dia<br><em>(média da semana)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{DI_MAU}}</div>
+              <div class="kpi-name">Usuários no mês<br><em>(últimos 28 dias)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{DI_SES_DIA}}</div>
+              <div class="kpi-name">Visitas por dia<br><em>(média da semana)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{DI_VISITAS_USU}}</div>
+              <div class="kpi-name">Visitas por usuário</div>
+            </div>
+            <div>
+              <div class="kpi-val">{{DI_TEMPO}}</div>
+              <div class="kpi-name">Tempo médio por visita<br><em>{{DI_ENGAJ_PCT}} das visitas engajadas</em></div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-card inst">
+          <div class="kpi-card-label">Site Institucional · abcs.org.br</div>
+<div class="kpi-grid">
+            <div>
+              <div class="kpi-val">{{INST_WAU}}</div>
+              <div class="kpi-name">Usuários na semana</div>
+              {{INST_DELTA}}
+            </div>
+            <div>
+              <div class="kpi-val">{{INST_DAU}}</div>
+              <div class="kpi-name">Usuários por dia<br><em>(média da semana)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{INST_MAU}}</div>
+              <div class="kpi-name">Usuários no mês<br><em>(últimos 28 dias)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{INST_SES_DIA}}</div>
+              <div class="kpi-name">Visitas por dia<br><em>(média da semana)</em></div>
+            </div>
+            <div>
+              <div class="kpi-val">{{INST_VISITAS_USU}}</div>
+              <div class="kpi-name">Visitas por usuário</div>
+            </div>
+            <div>
+              <div class="kpi-val">{{INST_TEMPO}}</div>
+              <div class="kpi-name">Tempo médio por visita<br><em>{{INST_ENGAJ_PCT}} das visitas engajadas</em></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-label">Quem acessou</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="card">
+            <div class="mini-label">Top países <em style="font-style:normal">(usuários)</em></div>
+            <ul class="rank-list">{{PAISES_ROWS}}</ul>
+          </div>
+          <div class="card">
+            <div class="mini-label">Top estados <em style="font-style:normal">(visitas)</em></div>
+            <ul class="rank-list">{{ESTADOS_ROWS}}</ul>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:8px">
+          <div class="mini-label">Como acessaram — usuários do Data Insights</div>
+          <div class="donut-row">{{DEVICE_ROWS}}</div>
+        </div>
+        <div class="card">
+          <div class="mini-label">Usuários por dia — Data Insights</div>
+          <div class="donut-row">{{DIAS_ROWS}}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Painéis mais acessados</div>
+        <div class="card" style="margin-bottom:8px">
+          <div class="mini-label">Categoria com mais acessos na semana</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span class="tema-pill">{{TEMA_TOP}}</span>
+            <span style="font-size:10.5px;color:#9aa39d">{{TEMA_PCT}} dos acessos</span>
+          </div>
+          <div style="font-size:10px;color:#6b7770;margin-top:4px">{{TEMA_DESC}}</div>
+        </div>
+
+        <div class="card" style="margin-bottom:8px">
+          <div class="mini-label">Ranking da semana</div>
+          <table class="painel-table">
+            <thead>
+              <tr><th>Painel</th><th>Acessos</th><th>Engajados</th></tr>
+            </thead>
+            <tbody>{{PAINEIS_ROWS}}</tbody>
+          </table>
+        </div>
+
+        <div class="highlight-box">
+          <div style="font-size:9.5px;font-weight:600;letter-spacing:0.8px;color:var(--verde);text-transform:uppercase;margin-bottom:3px">Destaque da semana</div>
+          <div class="highlight-big">{{HIGHLIGHT_VAL}}</div>
+          <div style="font-size:11px;color:var(--verde-escuro);font-weight:500">visitas por usuário no Data Insights</div>
+          <div class="highlight-sub">{{HIGHLIGHT_SUB}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glossary">
+      <div class="glossary-title">Como ler este relatório</div>
+      <div class="glossary-item"><strong>Usuários na semana:</strong> pessoas diferentes que acessaram de segunda a domingo — quem voltou vários dias conta uma vez só. <strong>Usuários no mês</strong> segue a mesma lógica para os últimos 28 dias.</div>
+      <div class="glossary-item"><strong>Usuários por dia:</strong> média, nos 7 dias, de quantas pessoas diferentes acessaram em cada dia.</div>
+      <div class="glossary-item"><strong>Visita:</strong> uma sessão no site. <strong>Visita engajada</strong> durou mais de 10 segundos, teve 2+ páginas ou uma conversão (definição do GA4). Acessos automatizados (robôs) já vêm descontados.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-note">{{FONTE_NOTA}}</div>
+    <div class="footer-next">Próximo relatório<br>{{PROX_RELATORIO}}</div>
+  </div>
+</div>
+</body>
+</html>

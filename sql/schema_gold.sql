@@ -180,16 +180,25 @@ ORDER BY 2 DESC;
 -- Regra de bot = mesma da silver (engajou E não é blob >= 30 sessões com < 5%
 -- de engajamento), mas aplicada às sessões da JANELA de cada métrica: um
 -- segmento entra no wau se suas sessões dos últimos 7 dias passam na regra.
+--
+-- Sessões/engajamento/tempo saem no mesmo recorte dos usuários, para as razões
+-- (visitas por usuário etc.) fecharem:
+--   sessoes, sessoes_engajadas, tempo_engajamento_s -> do dia, regra do dau
+--                                                      (aditivas entre dias)
+--   *_7d -> soma dos 7 dias até event_date, regra do wau (no domingo = semana
+--           seg–dom no mesmo recorte do wau; NÃO somar entre dias)
 CREATE VIEW gold.vw_usuarios_ativos AS
 WITH janelas AS (
     SELECT
         event_date, site, hostname, country, device_category, dau, wau, mau,
-        sessions          AS ses_1d,
-        engaged_sessions  AS eng_1d,
-        SUM(sessions) OVER w7           AS ses_7d,
-        SUM(engaged_sessions) OVER w7   AS eng_7d,
-        SUM(sessions) OVER w28          AS ses_28d,
-        SUM(engaged_sessions) OVER w28  AS eng_28d
+        sessions                AS ses_1d,
+        engaged_sessions        AS eng_1d,
+        user_engagement_seconds AS tempo_1d,
+        SUM(sessions) OVER w7                AS ses_7d,
+        SUM(engaged_sessions) OVER w7        AS eng_7d,
+        SUM(user_engagement_seconds) OVER w7 AS tempo_7d,
+        SUM(sessions) OVER w28               AS ses_28d,
+        SUM(engaged_sessions) OVER w28       AS eng_28d
     FROM silver.ga4_usuarios
     WHERE site <> 'Outros'
     WINDOW
@@ -197,14 +206,27 @@ WITH janelas AS (
                 RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW),
         w28 AS (PARTITION BY hostname, country, device_category ORDER BY event_date
                 RANGE BETWEEN INTERVAL '27 days' PRECEDING AND CURRENT ROW)
+),
+flags AS (
+    SELECT *,
+        eng_1d  > 0 AND NOT (ses_1d  >= 30 AND eng_1d::numeric  / ses_1d  < 0.05) AS valido_1d,
+        eng_7d  > 0 AND NOT (ses_7d  >= 30 AND eng_7d::numeric  / ses_7d  < 0.05) AS valido_7d,
+        eng_28d > 0 AND NOT (ses_28d >= 30 AND eng_28d::numeric / ses_28d < 0.05) AS valido_28d
+    FROM janelas
 )
 SELECT
     event_date,
     site,
     country,
     device_category,
-    SUM(dau) FILTER (WHERE eng_1d  > 0 AND NOT (ses_1d  >= 30 AND eng_1d::numeric  / ses_1d  < 0.05)) AS dau,
-    SUM(wau) FILTER (WHERE eng_7d  > 0 AND NOT (ses_7d  >= 30 AND eng_7d::numeric  / ses_7d  < 0.05)) AS wau,
-    SUM(mau) FILTER (WHERE eng_28d > 0 AND NOT (ses_28d >= 30 AND eng_28d::numeric / ses_28d < 0.05)) AS mau
-FROM janelas
+    SUM(dau)      FILTER (WHERE valido_1d)  AS dau,
+    SUM(wau)      FILTER (WHERE valido_7d)  AS wau,
+    SUM(mau)      FILTER (WHERE valido_28d) AS mau,
+    SUM(ses_1d)   FILTER (WHERE valido_1d)  AS sessoes,
+    SUM(eng_1d)   FILTER (WHERE valido_1d)  AS sessoes_engajadas,
+    SUM(tempo_1d) FILTER (WHERE valido_1d)  AS tempo_engajamento_s,
+    SUM(ses_7d)   FILTER (WHERE valido_7d)  AS sessoes_7d,
+    SUM(eng_7d)   FILTER (WHERE valido_7d)  AS sessoes_engajadas_7d,
+    SUM(tempo_7d) FILTER (WHERE valido_7d)  AS tempo_engajamento_7d_s
+FROM flags
 GROUP BY 1, 2, 3, 4;

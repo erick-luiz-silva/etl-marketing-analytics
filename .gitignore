@@ -14,9 +14,9 @@ BI/*.pbix
 BI/**/.pbi/localSettings.json
 BI/**/.pbi/cache.abf
 
-# Relatório: saídas geradas, templates e imagens
+# Relatório: só as saídas geradas ficam fora (template e logos são versionados)
 report/*.html
+!report/template_weekly.html
 report/*.pdf
 report/*.png
 report/*.txt
-report/logo_abcs_png/

@@ -63,7 +63,9 @@ METRICAS = [
 # terminando em `date` (active7DayUsers no domingo = WAU seg–dom exato).
 # Grão grosso (host × país × dispositivo): a soma entre linhas infla ≤ ~2%,
 # contra +20–30% no grão de segmento do Report A. sessions/engagedSessions
-# diárias vêm junto para a gold aplicar a regra de bot sobre a janela.
+# diárias vêm junto para a gold aplicar a regra de bot sobre a janela, e com o
+# tempo de engajamento dão sessões/tempo no MESMO recorte dos usuários (no Report
+# A o filtro de bot é por segmento fino e descarta visitas reais sem engajamento).
 # Ver testes/ACHADOS.md, teste 7.
 DIMENSOES_USUARIOS = ["date", "hostName", "country", "deviceCategory"]
 METRICAS_USUARIOS = [
@@ -72,6 +74,7 @@ METRICAS_USUARIOS = [
     "active28DayUsers",
     "sessions",
     "engagedSessions",
+    "userEngagementDuration",
 ]
 
 # Datas de corte:
