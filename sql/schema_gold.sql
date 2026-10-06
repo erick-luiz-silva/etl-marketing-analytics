@@ -8,6 +8,8 @@
 
 CREATE SCHEMA IF NOT EXISTS gold;
 
+DROP VIEW IF EXISTS gold.vw_paineis_url_sem_mapa;
+DROP VIEW IF EXISTS gold.vw_paineis_acessos;
 DROP VIEW IF EXISTS gold.vw_usuarios_ativos;
 DROP VIEW IF EXISTS gold.vw_qualidade_trafego;
 DROP VIEW IF EXISTS gold.vw_site_overview;
@@ -107,8 +109,57 @@ LEFT JOIN silver.dim_painel_alias a
 LEFT JOIN silver.dim_painel da
     ON da.ativo AND da.painel = a.painel;
 
--- Ranking de painéis de dados. Sem filtro de bot: abcsdata não tem onda
--- robótica e a métrica é a contagem bruta de acessos. Grão inclui event_name.
+-- Aberturas de painel pela URL (Report D) — FONTE PRINCIPAL do ranking de painéis
+-- desde 2026-10-06. Não depende da tag de clique do GTM.
+--   aberturas    = page_views (inclui recarregar a página)
+--   acessos      = pessoas que abriram o painel no dia (pessoa × painel × dia);
+--                  aditivo entre dias -> "acessos na semana" = soma
+--   pessoas_7d / pessoas_28d = pessoas únicas nos 7/28 dias até event_date;
+--                  para um período, ler do último dia (não somar entre dias)
+--   versao       = desktop | mobile | unica (versão do relatório aberta — proxy
+--                  do dispositivo; 'unica' quando o painel tem um relatório só)
+-- Um painel tem várias URLs (desktop/mobile, codificação); somar usuários entre
+-- elas conta 2x quem abriu as duas versões no mesmo dia — raro.
+CREATE VIEW gold.vw_paineis_acessos AS
+SELECT
+    p.event_date,
+    d.painel,
+    d.ordem_menu,
+    d.tema,
+    d.hierarquia,
+    d.tipo,
+    r.versao,
+    SUM(p.page_views)   AS aberturas,
+    SUM(p.usuarios)     AS acessos,
+    SUM(p.usuarios_7d)  AS pessoas_7d,
+    SUM(p.usuarios_28d) AS pessoas_28d
+FROM silver.ga4_paginas p
+JOIN silver.dim_painel_relatorio r ON r.alvo = p.alvo
+JOIN silver.dim_painel d ON d.painel = r.painel AND d.ativo
+WHERE p.site = 'Data Insights'
+GROUP BY 1, 2, 3, 4, 5, 6, 7;
+
+-- Auditoria: URLs de painel cujo alvo não está em silver.dim_painel_relatorio
+-- (painel novo ou relatório republicado com ID novo -> cadastrar no seed).
+CREATE VIEW gold.vw_paineis_url_sem_mapa AS
+SELECT
+    p.alvo,
+    min(p.event_date)   AS primeira_data,
+    max(p.event_date)   AS ultima_data,
+    SUM(p.page_views)   AS aberturas,
+    min(p.page_location) AS exemplo_url
+FROM silver.ga4_paginas p
+LEFT JOIN silver.dim_painel_relatorio r ON r.alvo = p.alvo
+WHERE r.alvo IS NULL
+  AND p.site = 'Data Insights'
+  AND COALESCE(p.alvo, '') <> 'contato.php'
+GROUP BY 1
+ORDER BY 4 DESC;
+
+-- Ranking de painéis pelo evento de clique (Report B). Desde 2026-10-06 serve
+-- de AUDITORIA DO GTM — o ranking oficial é gold.vw_paineis_acessos. Sem filtro
+-- de bot: abcsdata não tem onda robótica e a métrica é a contagem bruta de
+-- acessos. Grão inclui event_name.
 --
 -- PRELIMINAR (ver testes/ACHADOS.md): painel_acessado e painel_clicado disparam
 -- juntos em /relatorios/ → há dupla contagem entre os dois event_name. A

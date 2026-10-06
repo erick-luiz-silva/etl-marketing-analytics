@@ -29,6 +29,8 @@ GOLD_CONTAGENS = [
     ("gold.vw_site_overview", "SELECT count(*) FROM gold.vw_site_overview;"),
     ("gold.vw_paineis_sem_mapeamento", "SELECT count(*) FROM gold.vw_paineis_sem_mapeamento;"),
     ("gold.vw_usuarios_ativos", "SELECT count(*) FROM gold.vw_usuarios_ativos;"),
+    ("gold.vw_paineis_acessos", "SELECT count(*) FROM gold.vw_paineis_acessos;"),
+    ("gold.vw_paineis_url_sem_mapa", "SELECT count(*) FROM gold.vw_paineis_url_sem_mapa;"),
 ]
 
 

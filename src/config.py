@@ -77,12 +77,26 @@ METRICAS_USUARIOS = [
     "userEngagementDuration",
 ]
 
+# Report D — aberturas de painel pela URL da página (fonte principal do ranking
+# de painéis desde 2026-10-06). Cada painel abre /relatorios/?redirect=<URL do
+# Power BI>; o parâmetro r= da URL carrega o ID do relatório (versões desktop e
+# mobile têm IDs diferentes). Não depende de tag de clique no GTM — a do
+# painel_acessado ficou quebrada de ~19/09 a 05/10 quando o site mudou o menu.
+# activeUsers com date = pessoas que abriram aquela URL no dia; active7/28DayUsers
+# dão pessoas únicas na semana/mês. Sem deviceCategory: combinada com pageLocation
+# a GA4 só devolve os últimos ~2 meses (retenção); o dispositivo vem da versão do
+# relatório (desktop/mobile) em silver.dim_painel_relatorio. Ver ACHADOS, teste 9.
+DIMENSOES_PAGINAS = ["date", "hostName", "pageLocation"]
+METRICAS_PAGINAS = ["eventCount", "activeUsers", "active7DayUsers", "active28DayUsers"]
+
 # Datas de corte:
 #   - Report A (uso de site): dados desde fev/2023
 #   - Report B (painéis): a dimensão nome_painel passou a retornar dados em
 #     jun/2026; eventos painel_acessado reais só a partir de 27/08/2026
 DATA_INICIO_HISTORICO = date(2023, 2, 1)
 DATA_INICIO_PAINEIS = date(2026, 6, 1)
+# URLs /relatorios/?redirect= aparecem na GA4 desde jun/2026.
+DATA_INICIO_PAGINAS = date(2026, 6, 1)
 
 # A GA4 processa dados com 24–48h de atraso; a janela incremental recua 3 dias.
 JANELA_SEGURANCA_DIAS = 3

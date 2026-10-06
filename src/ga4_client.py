@@ -5,6 +5,7 @@ relatórios (ver testes/ACHADOS.md):
   - extrair_site(inicio, fim)     -> uso do site, sem dimensão personalizada
   - extrair_paineis(inicio, fim)  -> eventos de painel, com customEvent:nome_painel
   - extrair_usuarios(inicio, fim) -> usuários ativos de 1/7/28 dias (DAU/WAU/MAU)
+  - extrair_paginas(inicio, fim)  -> page_views das URLs de painel (/relatorios/?redirect=)
 
 Ambos seguem a paginação por offset e devolvem linhas achatadas em dicts.
 """
@@ -16,6 +17,7 @@ import google.auth.transport.requests
 import requests
 
 from config import (
+    DIMENSOES_PAGINAS,
     DIMENSOES_PAINEL,
     DIMENSOES_SITE,
     DIMENSOES_USUARIOS,
@@ -24,6 +26,7 @@ from config import (
     GA4_PROPERTY_ID,
     GA4_SCOPES,
     METRICAS,
+    METRICAS_PAGINAS,
     METRICAS_USUARIOS,
 )
 
@@ -138,6 +141,24 @@ def extrair_usuarios(inicio, fim):
     return _extrair(DIMENSOES_USUARIOS, inicio, fim, metricas=METRICAS_USUARIOS)
 
 
+def extrair_paginas(inicio, fim):
+    """Report D — page_views do Data Insights cuja URL abre um painel (?redirect=)."""
+    filtro = {
+        "andGroup": {
+            "expressions": [
+                {"filter": {"fieldName": "hostName",
+                            "stringFilter": {"value": "abcsdata.abcs.org.br"}}},
+                {"filter": {"fieldName": "eventName",
+                            "stringFilter": {"value": "page_view"}}},
+                {"filter": {"fieldName": "pageLocation",
+                            "stringFilter": {"matchType": "CONTAINS", "value": "redirect="}}},
+            ]
+        }
+    }
+    return _extrair(DIMENSOES_PAGINAS, inicio, fim, dimension_filter=filtro,
+                    metricas=METRICAS_PAGINAS)
+
+
 if __name__ == "__main__":
     from datetime import date, timedelta
 
@@ -145,3 +166,4 @@ if __name__ == "__main__":
     print(f"site   {ontem}: {len(extrair_site(ontem, ontem))} linhas")
     print(f"painel {ontem}: {len(extrair_paineis(ontem, ontem))} linhas")
     print(f"usuarios {ontem}: {len(extrair_usuarios(ontem, ontem))} linhas")
+    print(f"paginas {ontem}: {len(extrair_paginas(ontem, ontem))} linhas")

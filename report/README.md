@@ -55,7 +55,7 @@ por isso as razões fecham (visitas por usuário ≥ 1).
 | Top estados | visitas por estado (`gold.vw_site_overview`, só Brasil) |
 | Dispositivos (Data Insights) | usuários (WAU) por dispositivo |
 | Usuários por dia (Data Insights) | `dau` de cada dia da semana |
-| Ranking de painéis | `gold.vw_paineis_ranking`, **só `painel_acessado`** (somar `painel_clicado` contaria o mesmo acesso duas vezes) |
+| Ranking de painéis | `gold.vw_paineis_acessos` (aberturas pela URL `?redirect=`, não pelo clique do GTM): **acessos** = pessoa × painel × dia; **pessoas** = únicas na semana (`pessoas_7d` do domingo) |
 
 Tráfego robótico já vem descontado nas views e **não aparece** no relatório nem no
 texto; o acompanhamento de bots fica no Power BI (página de qualidade).
@@ -75,6 +75,6 @@ estáveis, diz isso em vez de forçar números. Mesma lógica (`construir_tldr`,
 
 ## Observações
 
-- Painéis: números baixos e preliminares até o rastreamento estabilizar — o
-  relatório sinaliza isso nas primeiras semanas após 27/08/2026.
+- Painéis contados pela URL desde 2026-10-06 (o evento de clique ficou quebrado
+  de ~19/09 a 05/10). Ver `testes/ACHADOS.md`, teste 9.
 - O card PNG para WhatsApp foi removido em 05/10/2026 (não era usado).
