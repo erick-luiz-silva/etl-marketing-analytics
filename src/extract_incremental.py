@@ -1,4 +1,4 @@
-"""Carga incremental diária: bronze (site + painel + usuarios) -> silver.
+"""Carga incremental diária: bronze (site + painel + usuarios + paginas) -> silver.
 
 Janela = [min(hoje - N, último data_fim - N), hoje - 1], N = JANELA_SEGURANCA_DIAS.
 Se rodou ontem, é D-N fixo. Se ficou dias sem rodar, a janela se alarga sozinha.
@@ -7,9 +7,9 @@ Cada relatório tem seu próprio controle de janela.
 
 from datetime import date, timedelta
 
-from config import DATA_INICIO_PAINEIS, JANELA_SEGURANCA_DIAS
+from config import DATA_INICIO_PAGINAS, DATA_INICIO_PAINEIS, JANELA_SEGURANCA_DIAS
 from db import get_connection
-from ga4_client import extrair_paineis, extrair_site, extrair_usuarios
+from ga4_client import extrair_paginas, extrair_paineis, extrair_site, extrair_usuarios
 from load_bronze import gravar_snapshot_diario
 from load_silver import executar_transformacao_silver
 
@@ -67,6 +67,7 @@ def executar_carga_incremental():
     # usuarios: o histórico vem de extract_bronze.py --relatorios usuarios;
     # sem ele, o incremental começa só na janela D-N.
     _incremental("usuarios", extrair_usuarios, date.today() - timedelta(days=1095))
+    _incremental("paginas", extrair_paginas, DATA_INICIO_PAGINAS)
     print("\nTransformando silver...")
     executar_transformacao_silver()
 

@@ -51,7 +51,8 @@ Extração validada por 5 testes de API documentados em
 - [x] Agendamento no Task Scheduler (roda na cópia Windows — ver "Execução")
 - [x] GTM: `nome_painel` canônico pelo ID do relatório (GTM v10, 2026-10-05) + aliases das grafias antigas
 - [x] Validação contra o export BigQuery (eventos batem 100%; ver `testes/ACHADOS.md`, Teste 8)
-- [ ] `dim_painel`: cadastrar `Competitividade Carne Suína` e `Mercado Global` (já rastreados pelo GTM)
+- [x] `dim_painel`: `Competitividade Carne Suína` e `Mercado Global` cadastrados (ordem/público a definir)
+- [x] Painéis contados pela URL (`?redirect=` → ID do relatório), independente do GTM (Report D, Teste 9)
 - [ ] GA4: ativar filtro "Tráfego de desenvolvedor" (11% dos `painel_acessado` são Preview do GTM)
 - [ ] Painéis: registrar `redirect_url`/`origem` como dimensão no GA4, modelar `origem`, deduplicar (futuro)
 
@@ -68,6 +69,7 @@ Extração validada por 5 testes de API documentados em
 | Os 18 painéis do Data Insights são todos distintos; o GTM manda o nome canônico | `silver.dim_painel` (dimensão descritiva, seed do CSV do time) + match exato na Gold; `dim_painel_alias` p/ drift |
 | ~~48% dos `painel_acessado` vêm com `nome_painel = (not set)`~~ — resolvido desde 29/08 (export BigQuery) | `(not set)` conta como `painel = NULL`, fora do ranking; GTM v10 manda o nome canônico pelo ID do relatório |
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
+| Evento de clique `painel_acessado` parou de ~19/09 a 05/10 (site mudou o menu) | **Report D**: aberturas pela URL `/relatorios/?redirect=` (ID do relatório Power BI no `r=`), mapa ID → painel em `silver.dim_painel_relatorio` |
 | Incluir `customEvent:nome_painel` num relatório **corta o histórico** para ~jun/2026 (data de criação da dimensão) | **Dois relatórios**: Report A (site, sem a dimensão, desde fev/2023) e Report B (painéis, com a dimensão) |
 | Painéis só têm dados reais desde 27/08/2026 | `DATA_INICIO_HISTORICO` (fev/2023) vs `DATA_INICIO_PAINEIS` (jun/2026) em `config.py` |
 | Usuário não é aditivo entre dias; a soma por segmento fino infla +20–30% | **Report C**: `active1/7/28DayUsers` por data × host × país × dispositivo (infla ≤ 2%), regra de bot sobre a janela |
@@ -83,14 +85,17 @@ GA4 Data API  (propriedade 353835454, Service Account)
         ├── Report A (uso do site, sem custom dim)      ── desde fev/2023
         ├── Report B (painéis, com customEvent:nome_painel,
         │             filtrado a painel_acessado/clicado) ── desde jun/2026
-        └── Report C (usuários ativos 1/7/28 dias, por
-                      host × país × dispositivo)            ── desde fev/2023
+        ├── Report C (usuários ativos 1/7/28 dias, por
+        │             host × país × dispositivo)            ── desde fev/2023
+        └── Report D (page_views de /relatorios/?redirect=,
+                      por URL → ID do relatório → painel)   ── desde jun/2026
         ▼
 ┌──────────────────────────────────────────────┐
 │ BRONZE   1 linha por dia, JSON cru, append-only│
 │  bronze.ga4_site_raw                           │
 │  bronze.ga4_paineis_raw                        │
 │  bronze.ga4_usuarios_raw                       │
+│  bronze.ga4_paginas_raw                        │
 │  bronze.controle_execucao (col. relatorio)     │
 └──────────────────────────────────────────────┘
         │  substitui o dia inteiro (idempotente)
@@ -101,6 +106,8 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │                coluna trafego_valido/segmento  │
 │  ga4_paineis   eventos de painel + nome_painel │
 │  ga4_usuarios  DAU/WAU/MAU + sessões por dia   │
+│  ga4_paginas   aberturas de painel por URL     │
+│  dim_painel_relatorio  ID do relatório → painel│
 │  dim_painel        dimensão dos 18 painéis      │
 │  dim_painel_alias  apelidos GA4 → painel        │
 └──────────────────────────────────────────────┘
@@ -116,6 +123,8 @@ GA4 Data API  (propriedade 353835454, Service Account)
 │           vw_engajamento_dispositivo,          │
 │           vw_paineis_sem_mapeamento (auditoria)│
 │  usuários: vw_usuarios_ativos (DAU/WAU/MAU)    │
+│  painéis (oficial): vw_paineis_acessos,        │
+│           vw_paineis_url_sem_mapa (auditoria)  │
 └──────────────────────────────────────────────┘
         │
         ▼

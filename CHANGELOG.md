@@ -3,6 +3,29 @@
 Mudanças relevantes de dados, modelo e entregáveis — o que mudou, por quê e o que
 fazer para aplicar. Detalhes de investigação ficam em `testes/ACHADOS.md`.
 
+## 2026-10-06
+
+### Painéis contados pela URL da página (Report D)
+- **O quê:** nova extração dos page_views `/relatorios/?redirect=` por data × URL,
+  com aberturas, pessoas no dia e pessoas únicas em 7/28 dias. O ID do relatório
+  Power BI é decodificado da URL (`silver.fn_alvo_redirect`) e mapeado para o
+  painel em `silver.dim_painel_relatorio` (com a versão desktop/mobile) →
+  `gold.vw_paineis_acessos`. Auditoria de IDs novos: `gold.vw_paineis_url_sem_mapa`.
+- **Por quê:** o evento de clique (`painel_acessado`) parou de disparar de ~19/09 a
+  05/10 quando o site mudou o menu. A URL não depende de tag de clique.
+- **Relatório semanal:** ranking de painéis passa a mostrar **acessos** (pessoa ×
+  painel × dia) e **pessoas** (únicas na semana). O aviso de "dados de painel em
+  consolidação" saiu.
+- **Impacto nos números:** semana 28/09–04/10: 151 acessos (antes: 20 cliques).
+  O ranking muda de ordem (SIF Abate e IBGE Abate sobem).
+- **Atenção:** antes de ~15/09 a contagem por URL é um piso (o menu trocava o
+  painel sem recarregar a página). Para esse período o evento de clique
+  (`gold.vw_paineis_ranking`) é mais completo.
+- **Dimensão:** `Competitividade Carne Suína` (COTAÇÕES/PREÇOS) e `Mercado Global`
+  (COMÉRCIO EXTERIOR) entram na `dim_painel`; ordem de menu e público a definir.
+- **Aplicar:** `python src/setup_db.py`, `python src/load_dimensoes.py`,
+  `python src/extract_bronze.py --relatorios paginas`.
+
 ## 2026-10-05
 
 ### Validação contra o export BigQuery + aliases de painéis

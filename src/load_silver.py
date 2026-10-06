@@ -20,9 +20,12 @@ CONTAGENS = [
     ("silver.ga4_paineis (dias)", "SELECT count(DISTINCT event_date) FROM silver.ga4_paineis;"),
     ("silver.ga4_usuarios (total)", "SELECT count(*) FROM silver.ga4_usuarios;"),
     ("silver.ga4_usuarios (dias)", "SELECT count(DISTINCT event_date) FROM silver.ga4_usuarios;"),
+    ("silver.ga4_paginas (total)", "SELECT count(*) FROM silver.ga4_paginas;"),
+    ("silver.ga4_paginas (dias)", "SELECT count(DISTINCT event_date) FROM silver.ga4_paginas;"),
 ]
 
-TABELAS_SILVER = ["silver.ga4_eventos", "silver.ga4_paineis", "silver.ga4_usuarios"]
+TABELAS_SILVER = ["silver.ga4_eventos", "silver.ga4_paineis", "silver.ga4_usuarios",
+                  "silver.ga4_paginas"]
 
 
 def executar_transformacao_silver(completo=False):

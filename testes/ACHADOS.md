@@ -170,6 +170,44 @@ da home e tradução do navegador; fora do mapa cai no Click Text. Novo parâmet
 `Comércio Exterior`) e **`Competitividade Carne Suína`, `Mercado Global`** —
 painéis que não estão no CSV do time; precisam entrar na dim com tema/hierarquia.
 
+## Teste 9 — Aberturas de painel pela URL · `09_paineis_pagelocation.py` (2026-10-06)
+
+**Motivo:** o `painel_acessado` despencou a partir de ~19/09 (semana 21/09: 62
+eventos para 696 aberturas) — o site trocou 12 itens do menu para `abrirPainel()`
+e o gatilho do GTM não os reconhecia (corrigido no GTM v10, 05/10 17:54). O
+tráfego não caiu: os page_views do Data Insights subiram no mesmo período.
+
+**Achado:** toda abertura de painel carrega `/relatorios/?redirect=<URL Power BI>`,
+e o `r=` é um JSON base64 com o ID do relatório (`k`). Contar page_views por ID
+não depende de tag de clique.
+
+- **Decodificação 100%**: 3.292 page_views de 23/06 a 05/10, nenhum sem alvo
+  (0, 1 ou 2 níveis de percent-encoding; base64url ou padrão).
+- **Mapa ID → painel**: 33 IDs do mapa do GTM v10 (versão desktop e mobile de
+  cada painel) + 8 IDs antigos inferidos pelo export BigQuery (page_view casado com
+  o `painel_acessado` do mesmo usuário nos 20 s anteriores; painel dominante em
+  todos, ex. `e73d8faa` → Custos de Produção 27/36). Fora do mapa só `90c3897a`
+  (13 aberturas em jun–jul, antes do export) e `contato.php`.
+- **Versão = dispositivo**: no export, a versão mobile de cada painel é aberta
+  80–100% em celular e a desktop 87–100% em computador → `versao` em
+  `silver.dim_painel_relatorio` substitui `deviceCategory`.
+- **Retenção**: `pageLocation` × `deviceCategory` só devolve os últimos ~2 meses
+  (desde 06/08); sem `deviceCategory`, o histórico vai a 23/06 — inclusive com
+  `activeUsers`/`active7DayUsers`/`active28DayUsers`.
+- **Confere com o export** (semana 28/09–04/10, pessoa × painel × dia): CEPEA 20
+  vs 20, SIF Abate 20 vs 19, Custos 15 vs 16, Bolsas 12 vs 14. No agregado da
+  semana a Data API fica 0–20% acima do export: a mesma pessoa abrindo a URL
+  codificada e a não codificada do mesmo painel no mesmo dia conta 2×, e o export
+  exclui `debug_mode`.
+- **Limite antes de ~15/09**: o menu trocava o painel dentro da página
+  (`mudarIframe`), sem page_view novo — só a abertura pelo card da home gerava
+  URL. Semana 31/08: 113 aberturas por URL vs 252 cliques. Até ~15/09 a contagem
+  por URL é **piso**; de ~15/09 em diante captura tudo (semana 14/09: 447 vs 140).
+
+→ **Report D** (`bronze.ga4_paginas_raw` → `silver.ga4_paginas` →
+`gold.vw_paineis_acessos`) vira a fonte do ranking de painéis. O Report B
+(`painel_acessado`) continua como auditoria do GTM.
+
 ---
 
 ## Consequências para o desenho (vs readme_previo)

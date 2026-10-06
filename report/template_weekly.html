@@ -68,7 +68,7 @@ body{font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;background:#
 .accent-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
 .painel-table{width:100%;border-collapse:collapse;font-size:10.5px}
 .painel-table th{font-size:9px;font-weight:600;letter-spacing:0.5px;color:#9aa39d;text-transform:uppercase;padding:0 0 5px;border-bottom:0.5px solid #e8e8e8;text-align:left}
-.painel-table th:not(:first-child){text-align:right}
+.painel-table th:not(:first-child){text-align:right;padding-left:12px}
 .painel-table td{padding:4px 0;border-bottom:0.5px solid #f3f4f3;color:#1a2a22;vertical-align:middle}
 .painel-table td:not(:first-child){text-align:right;font-family:'DM Mono',monospace;font-size:10.5px;color:#3f4a44}
 .painel-table tr:first-child td{font-weight:500;color:var(--verde-escuro)}
@@ -115,8 +115,6 @@ body{font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;background:#
       <div class="header-note">Semana fechada, de segunda a domingo</div>
     </div>
   </div>
-
-  {{NOTICE}}
 
   <div class="body">
     <div>
@@ -223,7 +221,7 @@ body{font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;background:#
           <div class="mini-label">Ranking da semana</div>
           <table class="painel-table">
             <thead>
-              <tr><th>Painel</th><th>Acessos</th><th>Engajados</th></tr>
+              <tr><th>Painel</th><th>Acessos</th><th>Pessoas</th></tr>
             </thead>
             <tbody>{{PAINEIS_ROWS}}</tbody>
           </table>
@@ -241,6 +239,7 @@ body{font-family:'DM Sans',-apple-system,Segoe UI,Roboto,sans-serif;background:#
     <div class="glossary">
       <div class="glossary-title">Como ler este relatório</div>
       <div class="glossary-item"><strong>Usuários na semana:</strong> pessoas diferentes que acessaram de segunda a domingo — quem voltou vários dias conta uma vez só. <strong>Usuários no mês</strong> segue a mesma lógica para os últimos 28 dias.</div>
+      <div class="glossary-item"><strong>Acessos a painel:</strong> cada pessoa que abriu o painel em um dia conta 1 acesso (recarregar a página não soma). <strong>Pessoas</strong>: quantas pessoas diferentes abriram o painel na semana.</div>
       <div class="glossary-item"><strong>Usuários por dia:</strong> média, nos 7 dias, de quantas pessoas diferentes acessaram em cada dia.</div>
       <div class="glossary-item"><strong>Visita:</strong> uma sessão no site. <strong>Visita engajada</strong> durou mais de 10 segundos, teve 2+ páginas ou uma conversão (definição do GA4). Acessos automatizados (robôs) já vêm descontados.</div>
     </div>

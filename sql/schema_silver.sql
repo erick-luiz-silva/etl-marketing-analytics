@@ -97,6 +97,52 @@ CREATE TABLE IF NOT EXISTS silver.ga4_usuarios (
 );
 CREATE INDEX IF NOT EXISTS ix_silver_ga4_usuarios_event_date ON silver.ga4_usuarios (event_date);
 
+-- Alvo do ?redirect= de uma URL de painel do Data Insights:
+--   - painel Power BI: o ID do relatório (campo "k" do JSON em base64 no r=)
+--   - página do site (tutorial.php, contato.php): o próprio nome do arquivo
+-- A URL chega com 0, 1 ou 2 níveis de percent-encoding; base64url ou padrão.
+CREATE OR REPLACE FUNCTION silver.fn_alvo_redirect(url TEXT) RETURNS TEXT
+LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+    u   TEXT := url;
+    r64 TEXT;
+BEGIN
+    FOR i IN 1..2 LOOP  -- decodifica %25 primeiro, depois o resto
+        u := replace(replace(replace(replace(replace(replace(replace(replace(
+             u, '%25', '%'), '%3A', ':'), '%2F', '/'), '%3F', '?'), '%3D', '='),
+             '%26', '&'), '%2B', '+'), '%2C', ',');
+    END LOOP;
+    r64 := substring(u FROM '[?&]r=([A-Za-z0-9+/_-]+)');
+    IF r64 IS NULL THEN
+        RETURN substring(u FROM 'redirect=([^&#?]+)');
+    END IF;
+    r64 := translate(r64, '-_', '+/');
+    r64 := r64 || repeat('=', (4 - length(r64) % 4) % 4);
+    RETURN convert_from(decode(r64, 'base64'), 'UTF8')::jsonb ->> 'k';
+EXCEPTION WHEN OTHERS THEN
+    RETURN NULL;
+END
+$$;
+
+-- Report D — page_views de URLs de painel (/relatorios/?redirect=), por dia × URL.
+-- usuarios = pessoas que abriram a URL no dia; usuarios_7d/28d =
+-- pessoas únicas nos 7/28 dias até event_date (janela móvel da GA4).
+CREATE TABLE IF NOT EXISTS silver.ga4_paginas (
+    id_pagina        BIGSERIAL PRIMARY KEY,
+    event_date       DATE NOT NULL,
+    hostname         VARCHAR(120) NOT NULL,
+    site             VARCHAR(20)  NOT NULL,
+    page_location    TEXT NOT NULL,
+    alvo             VARCHAR(120),            -- silver.fn_alvo_redirect(page_location)
+    page_views       BIGINT,
+    usuarios         BIGINT,
+    usuarios_7d      BIGINT,
+    usuarios_28d     BIGINT,
+    data_extracao    TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_silver_ga4_paginas_event_date ON silver.ga4_paginas (event_date);
+CREATE INDEX IF NOT EXISTS ix_silver_ga4_paginas_alvo       ON silver.ga4_paginas (alvo);
+
 -- Dimensão descritiva dos painéis do ABCS Data Insights. Cada painel é
 -- distinto (não são variações de grafia). Populada por src/load_dimensoes.py
 -- a partir de sql/seed_dim_painel.sql, snapshot versionado do CSV mantido pelo
@@ -112,6 +158,21 @@ CREATE TABLE IF NOT EXISTS silver.dim_painel (
     publico_principal VARCHAR(160),
     tipo              VARCHAR(20) NOT NULL DEFAULT 'painel',
     ativo             BOOLEAN NOT NULL DEFAULT true
+);
+
+-- Alvo do redirect (ID do relatório Power BI ou página do site) -> painel.
+-- Um painel tem vários IDs (versão desktop e mobile; IDs antigos republicados).
+-- Populada por sql/seed_dim_painel.sql. fonte: 'gtm' = mapa da variável
+-- "JS - Nome Painel" do GTM; 'inferido' = casado com painel_acessado do mesmo
+-- usuário no export BigQuery; 'site' = página do próprio site.
+-- versao: 'desktop' | 'mobile' (o site abre um relatório por tipo de tela — é a
+-- fonte do recorte por dispositivo) | 'unica' (painel com um relatório só, ou ID
+-- antigo usado nas duas telas). Classificada pelo device.category do export.
+CREATE TABLE IF NOT EXISTS silver.dim_painel_relatorio (
+    alvo   VARCHAR(120) PRIMARY KEY,
+    painel VARCHAR(120) NOT NULL REFERENCES silver.dim_painel (painel),
+    versao VARCHAR(10)  NOT NULL,
+    fonte  VARCHAR(20)  NOT NULL
 );
 
 -- Apelidos: grafias vindas do GA4 que não batem exatamente com dim_painel.painel.

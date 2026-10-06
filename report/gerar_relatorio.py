@@ -36,8 +36,6 @@ SAIDA_PADRAO = REPORT_DIR / "abcs_weekly_onepage_v2.html"
 RESUMO_TXT_PADRAO = REPORT_DIR / "resumo_semana.txt"
 LOGO = REPORT_DIR / "logo_abcs_png" / "ABCS-Horizontal-1.png"
 
-DATA_INICIO_PAINEIS = date(2026, 8, 27)  # eventos painel_acessado reais
-
 # A GA4 só fecha o dia D por volta do meio-dia de D+1 (testes/ACHADOS.md, teste 6):
 # o domingo só conta como completo se foi extraído depois disso.
 HORA_DIA_FECHADO = time(12, 0)
@@ -226,22 +224,26 @@ def devices_data_insights(cur, dom):
 
 
 def paineis_semana(cur, ini, fim):
-    # Só painel_acessado: painel_clicado dispara junto em /relatorios/ e somar os
-    # dois conta o mesmo acesso duas vezes (testes/ACHADOS.md).
+    # Aberturas pela URL do painel (gold.vw_paineis_acessos), não pelo evento de
+    # clique do GTM — que ficou quebrado de ~19/09 a 05/10 (testes/ACHADOS.md, teste 9).
+    # acessos = pessoa × painel × dia (soma da semana); pessoas = únicas na semana
+    # (pessoas_7d do domingo, mesma lógica do WAU).
     cur.execute(
         """
-        SELECT painel, tema, SUM(acessos), SUM(sessoes_engajadas), SUM(sessoes)
-        FROM gold.vw_paineis_ranking
-        WHERE event_date BETWEEN %s AND %s AND event_name = 'painel_acessado'
+        SELECT painel, tema,
+               COALESCE(SUM(acessos), 0),
+               COALESCE(SUM(pessoas_7d) FILTER (WHERE event_date = %s), 0)
+        FROM gold.vw_paineis_acessos
+        WHERE event_date BETWEEN %s AND %s AND tipo = 'painel'
         GROUP BY 1, 2
-        ORDER BY 3 DESC, SUM(sessoes_engajadas) DESC, 1 ASC;
+        HAVING SUM(acessos) > 0
+        ORDER BY 3 DESC, 4 DESC, 1 ASC;
         """,
-        (ini, fim),
+        (fim, ini, fim),
     )
     return [
-        {"painel": p, "tema": t, "acessos": int(a),
-         "engajadas": int(e), "sessoes": int(s)}
-        for p, t, a, e, s in cur.fetchall()
+        {"painel": p, "tema": t, "acessos": int(a), "pessoas": int(pe)}
+        for p, t, a, pe in cur.fetchall()
     ]
 
 
@@ -297,29 +299,10 @@ def dias_rows(dau_dia):
 def painel_rows(paineis, limite=6):
     if not paineis:
         return '<tr><td colspan="3" style="color:#9aa39d">sem acessos de painel na semana</td></tr>'
-    out = []
-    for p in paineis[:limite]:
-        taxa = (p["engajadas"] / p["sessoes"]) if p["sessoes"] else 0
-        cor = "#1b5e20" if taxa >= 0.6 else ("#f57c00" if taxa >= 0.3 else "#c62828")
-        out.append(
-            f'<tr><td>{p["painel"]}</td><td>{p["acessos"]}</td>'
-            f'<td><span class="pct-bar"><span class="pct-fill" '
-            f'style="width:{taxa * 100:.0f}%;background:{cor}"></span></span>'
-            f'{taxa * 100:.0f}%</td></tr>'
-        )
-    return "".join(out)
-
-
-def notice_html(ini, fim):
-    if ini <= DATA_INICIO_PAINEIS <= fim or fim < DATA_INICIO_PAINEIS + timedelta(days=21):
-        return (
-            '<div class="notice-bar"><div class="notice-icon">ℹ</div>'
-            '<div class="notice-text"><strong>Dados de painel ainda em consolidação:</strong> '
-            'o rastreamento por painel do ABCS Data Insights começou em 27/08/2026. '
-            'Os números de painéis desta semana são preliminares e tendem a se '
-            'estabilizar conforme o volume de acessos cresce.</div></div>'
-        )
-    return ""
+    return "".join(
+        f'<tr><td>{p["painel"]}</td><td>{n(p["acessos"])}</td><td>{n(p["pessoas"])}</td></tr>'
+        for p in paineis[:limite]
+    )
 
 
 def periodo_longo(seg_, dom):
@@ -450,7 +433,6 @@ def gerar_html(d, saida):
         "{{LOGO_DATA_URI}}": logo_data_uri(),
         "{{PERIODO_LONGO}}": periodo_longo(seg_, dom),
         "{{PROX_RELATORIO}}": f"{(dom + timedelta(days=8)):%d/%m/%Y}",
-        "{{NOTICE}}": notice_html(seg_, dom),
         **_kpis_html("DI", di, d["di_var"]),
         **_kpis_html("INST", inst, d["inst_var"]),
 
@@ -486,7 +468,7 @@ def gerar_html(d, saida):
     for nome, k in (("Data Insights", di), ("Institucional", inst)):
         print(f"  {nome:14}: {n(k['wau'])} usuários na semana, {n(k['dau_medio'])}/dia, "
               f"{n(k['mau'])} em 28 dias, {n(k['sessoes'])} sessões")
-    print(f"  Painéis       : {len(paineis)} com acesso, {d['tema_tot']} acessos totais")
+    print(f"  Painéis       : {len(paineis)} com acesso, {n(d['tema_tot'])} acessos totais")
     return saida
 
 
@@ -518,9 +500,10 @@ def gerar_texto_resumo(d, saida_txt):
     if paineis:
         linhas.append("   Top 3 painéis da semana:")
         for i, p in enumerate(paineis[:3], 1):
-            linhas.append(f"   {i}. *{p['painel']}* — {p['acessos']} acessos")
+            linhas.append(f"   {i}. *{p['painel']}* — {p['acessos']} acessos "
+                          f"({p['pessoas']} pessoas)")
     else:
-        linhas.append("   Sem acessos de painel registrados (rastreamento ainda recente).")
+        linhas.append("   Sem acessos de painel registrados na semana.")
 
     linhas += [
         "",

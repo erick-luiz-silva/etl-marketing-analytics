@@ -156,3 +156,39 @@ SELECT
     (elem->>'userEngagementDuration')::numeric,
     s.data_extracao
 FROM ultimo_snapshot s, jsonb_array_elements(s.payload) elem;
+
+-- =====================================================================
+-- Report D -> silver.ga4_paginas
+-- =====================================================================
+CREATE TEMP TABLE _dias_paginas ON COMMIT DROP AS
+SELECT b.event_date
+FROM bronze.ga4_paginas_raw b
+GROUP BY b.event_date
+HAVING max(b.data_extracao) > COALESCE(
+    (SELECT max(s.data_extracao) FROM silver.ga4_paginas s WHERE s.event_date = b.event_date),
+    '-infinity');
+
+DELETE FROM silver.ga4_paginas WHERE event_date IN (SELECT event_date FROM _dias_paginas);
+
+WITH ultimo_snapshot AS (
+    SELECT DISTINCT ON (event_date) event_date, payload, data_extracao
+    FROM bronze.ga4_paginas_raw
+    WHERE event_date IN (SELECT event_date FROM _dias_paginas)
+    ORDER BY event_date, data_extracao DESC
+)
+INSERT INTO silver.ga4_paginas (
+    event_date, hostname, site, page_location, alvo,
+    page_views, usuarios, usuarios_7d, usuarios_28d, data_extracao
+)
+SELECT
+    (elem->>'date')::date,
+    elem->>'hostName',
+    silver.fn_site(elem->>'hostName'),
+    elem->>'pageLocation',
+    silver.fn_alvo_redirect(elem->>'pageLocation'),
+    (elem->>'eventCount')::bigint,
+    (elem->>'activeUsers')::bigint,
+    (elem->>'active7DayUsers')::bigint,
+    (elem->>'active28DayUsers')::bigint,
+    s.data_extracao
+FROM ultimo_snapshot s, jsonb_array_elements(s.payload) elem;
