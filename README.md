@@ -49,8 +49,11 @@ Extração validada por 5 testes de API documentados em
 - [x] Relatório semanal (`report/`) com usuários e médias + trava de semana incompleta
 - [x] Dashboard Power BI (PBIP versionado em `BI/`) — correções do modelo em andamento
 - [x] Agendamento no Task Scheduler (roda na cópia Windows — ver "Execução")
-- [ ] GTM: `nome_painel = (not set)` + estabilizar grafias dos painéis (fora deste repo)
-- [ ] Painéis: registrar `redirect_url`/`pagina`, modelar `origem`, deduplicar (futuro)
+- [x] GTM: `nome_painel` canônico pelo ID do relatório (GTM v10, 2026-10-05) + aliases das grafias antigas
+- [x] Validação contra o export BigQuery (eventos batem 100%; ver `testes/ACHADOS.md`, Teste 8)
+- [ ] `dim_painel`: cadastrar `Competitividade Carne Suína` e `Mercado Global` (já rastreados pelo GTM)
+- [ ] GA4: ativar filtro "Tráfego de desenvolvedor" (11% dos `painel_acessado` são Preview do GTM)
+- [ ] Painéis: registrar `redirect_url`/`origem` como dimensão no GA4, modelar `origem`, deduplicar (futuro)
 
 ---
 
@@ -63,7 +66,7 @@ Extração validada por 5 testes de API documentados em
 | China = ~97% das sessões, 0% engajamento, só no site institucional | Segmento inválido = `sessions >= 30 AND taxa de engajamento < 5%`; `gold.vw_qualidade_trafego` monitora |
 | Métricas de sessão/usuário repetem em cada linha de `eventName` | Gold lê essas métricas só de `gold.vw_sessoes` (recorte `session_start`) |
 | Os 18 painéis do Data Insights são todos distintos; o GTM manda o nome canônico | `silver.dim_painel` (dimensão descritiva, seed do CSV do time) + match exato na Gold; `dim_painel_alias` p/ drift |
-| 48% dos `painel_acessado` vêm com `nome_painel = (not set)` | contam como `painel = NULL`, fora do ranking; problema é de GTM (fora do repo) |
+| ~~48% dos `painel_acessado` vêm com `nome_painel = (not set)`~~ — resolvido desde 29/08 (export BigQuery) | `(not set)` conta como `painel = NULL`, fora do ranking; GTM v10 manda o nome canônico pelo ID do relatório |
 | Existe evento `painel_clicado` além de `painel_acessado` | Ambos entram em `gold.vw_painel_normalizado` |
 | Incluir `customEvent:nome_painel` num relatório **corta o histórico** para ~jun/2026 (data de criação da dimensão) | **Dois relatórios**: Report A (site, sem a dimensão, desde fev/2023) e Report B (painéis, com a dimensão) |
 | Painéis só têm dados reais desde 27/08/2026 | `DATA_INICIO_HISTORICO` (fev/2023) vs `DATA_INICIO_PAINEIS` (jun/2026) em `config.py` |
@@ -264,4 +267,7 @@ repositório** (`C:\Users\User\Desktop\erick\projetos\marketing-analytics`), tar
   — não reprocessa a extração. Se o GTM mandar uma grafia diferente do nome
   canônico, adicionar linha em `silver.dim_painel_alias` (no mesmo seed).
   `gold.vw_paineis_sem_mapeamento` lista as grafias ainda sem correspondência.
+- **Conferência contra o bruto:** o export GA4 → BigQuery
+  (`thermal-history-506217-c4.analytics_353835454`, desde 27/08/2026) é a
+  referência para validar a silver — ver `testes/ACHADOS.md`, Teste 8.
 - A GA4 processa dados com 24–48h de atraso; a janela incremental já recua 3 dias.

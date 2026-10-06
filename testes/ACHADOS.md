@@ -16,7 +16,7 @@ Data: 2026-08-28 · Auth: Service Account `gcp-221@thermal-history-506217-c4.iam
 
 ## Teste 3 — Evento painel_acessado
 - Dados só desde 27/08/2026 (77 eventos até agora — volume ainda ínfimo).
-- **48% dos `painel_acessado` vêm com `nome_painel = "(not set)"`** — a tag GTM não está passando o parâmetro em todos os fluxos. Investigar no GTM antes de confiar no ranking de painéis.
+- **48% dos `painel_acessado` vêm com `nome_painel = "(not set)"`** — a tag GTM não está passando o parâmetro em todos os fluxos. Investigar no GTM antes de confiar no ranking de painéis. *(Superado: desde 29/08 zero eventos sem nome no export bruto — ver Teste 8.)*
 - Só `abcsdata.abcs.org.br` gera eventos de painel (esperado).
 
 ### `painel_acessado` vs `painel_clicado` — duplicação (análise ago/2026)
@@ -128,6 +128,48 @@ O resumo de 14–20/09 foi gerado com dados só até 18/09 (não houve carga em 
 20/09). Painéis saíram com 12/17/12 acessos contra 21/20/16 reais. O relatório agora
 recusa gerar se a semana não estiver completa na base (ver `report/README.md`).
 
+## Teste 8 — Validação contra o export BigQuery (2026-10-05)
+Silver (Data API) × export bruto `thermal-history-506217-c4.analytics_353835454`
+(1 linha por evento; existe desde 27/08/2026), período 27/08–03/10/2026, via MCP
+BigQuery. O histórico anterior não tem export para conferir.
+
+| | silver | export | dif |
+|---|---|---|---|
+| eventos (12 nomes × 4 hosts) | 425.285 | 425.285 | **0** em todos os 76 dia × host |
+| sessões abcs.org.br / abcsdata | 130.098 / 1.106 | 130.316 / 1.103 | −0,17% / +0,27% |
+| DAU abcsdata (soma dos dias) | 798 | 787 | +1,4% |
+| `painel_acessado` / `painel_clicado` | 734 / 42 | 734 / 42 | **0** |
+
+- Contagem de eventos é exata. Sessões/usuários diferem pouco porque a Data API
+  estima (HLL) e a soma por país × dispositivo infla — esperado.
+- **27/08 é o único dia com painel divergente**: a Data API devolve 46 eventos em
+  `(not set)` (23 dos 42 `painel_clicado`) que no bruto têm `nome_painel`.
+  Provável registro da dimensão personalizada no meio do dia (não confirmado).
+  De 28/08 em diante, nome × dia × evento bate 100%.
+- **O "48% (not set)" do Teste 3 já não vale**: no bruto só 19 eventos vieram sem
+  `nome_painel`, todos em 27–28/08; zero desde 29/08.
+- **Tráfego de teste do GTM conta como acesso**: 82 dos 734 `painel_acessado` (11%)
+  têm `debug_mode` (Preview do GTM), 1 usuário/dia, 27/08–18/09. A Data API não
+  expõe `debug_mode`; tirar isso exige ativar o filtro "Tráfego de desenvolvedor"
+  no Admin do GA4 (só vale dali em diante).
+- **`redirect_url` antigo não é confiável**: o mesmo relatório Power BI aparece com
+  até 17 `nome_painel` diferentes. Causa: a variável GTM pegava o `?redirect` da
+  página atual (painel anterior) em cliques no menu — corrigido no GTM v10.
+- Grafias sem mapeamento (22 nomes, 70 eventos) viraram aliases em
+  `seed_dim_painel.sql`, confirmados pelo ID do relatório no `redirect_url`
+  (sem hífen, rótulo-folha, tradução es/fr do navegador). Restam fora: `Fale com
+  a ABCS` (contato), `Redução SIF` (ambíguo), `猪肉竞争力` (= Competitividade
+  Carne Suína, painel fora da dim).
+
+### GTM versão 10 (publicada 2026-10-05)
+`painel_acessado` agora manda `nome_painel` = `{{JS - Nome Painel}}`: nome
+canônico a partir do ID do relatório Power BI (campo `k` do `r=`), imune a texto
+da home e tradução do navegador; fora do mapa cai no Click Text. Novo parâmetro
+`origem` (`menu` | `home`). O mapa da variável usa 4 nomes que não existem em
+`dim_painel`: `Comércio Exterior - Exportações/Importações` (→ alias para
+`Comércio Exterior`) e **`Competitividade Carne Suína`, `Mercado Global`** —
+painéis que não estão no CSV do time; precisam entrar na dim com tema/hierarquia.
+
 ---
 
 ## Consequências para o desenho (vs readme_previo)
@@ -148,4 +190,4 @@ recusa gerar se a semana não estiver completa na base (ver `report/README.md`).
 6. **`ga4_paineis` sem `trafego_valido`**: abcsdata não tem onda de bots e a
    métrica é a contagem bruta de acessos por painel.
 7. `painel_clicado` **entra no modelo** junto com `painel_acessado`.
-8. Abrir tarefa no GTM: 48% de `nome_painel = (not set)`.
+8. ~~Abrir tarefa no GTM: 48% de `nome_painel = (not set)`.~~ Resolvido (Teste 8); GTM v10 manda o nome canônico pelo ID do relatório.

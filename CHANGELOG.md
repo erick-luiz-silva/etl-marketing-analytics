@@ -5,6 +5,18 @@ fazer para aplicar. Detalhes de investigação ficam em `testes/ACHADOS.md`.
 
 ## 2026-10-05
 
+### Validação contra o export BigQuery + aliases de painéis
+- **O quê:** silver conferida contra o export bruto do GA4 no BigQuery
+  (27/08–03/10). 25 aliases novos em `sql/seed_dim_painel.sql` (grafias sem
+  hífen, rótulo-folha, traduções es/fr e os nomes do GTM v10 para Comércio Exterior).
+- **Resultado:** eventos batem 100% (dia × host × evento); sessões ±0,3%; DAU ±1,4%.
+  Painéis batem exatamente a partir de 28/08 (27/08 tem `(not set)` a mais na Data API).
+- **Impacto nos números:** 59 eventos de painel que estavam em
+  `gold.vw_paineis_sem_mapeamento` passam a contar no ranking (de 70 para 11 sem mapeamento).
+- **Atenção:** 11% dos `painel_acessado` são Preview do GTM (`debug_mode`), contados
+  como acesso. `Competitividade Carne Suína` e `Mercado Global` ainda não estão na dim.
+- **Aplicar:** `python src/load_dimensoes.py` (já aplicado no banco em 2026-10-05).
+
 ### Usuários ativos: DAU / WAU / MAU (Report C)
 - **O quê:** nova extração GA4 com `active1DayUsers` / `active7DayUsers` /
   `active28DayUsers` por data × host × país × dispositivo →

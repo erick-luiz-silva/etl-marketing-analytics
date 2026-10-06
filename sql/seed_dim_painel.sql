@@ -45,8 +45,37 @@ INSERT INTO silver.dim_painel_alias (alias, painel) VALUES
     ('Cotações Suínos CEPEA', 'Cotações Suínos - CEPEA'),   -- sem hífen
     ('Cotações Insumos',      'Cotações - Insumos'),         -- sem hífen
     ('Perfil',                'Emprego - Perfil'),           -- GTM manda só o rótulo-folha
-    ('Movimentação',          'Emprego - Movimentação')
+    ('Movimentação',          'Emprego - Movimentação'),
+    -- Confirmados 2026-10-05 contra o export BigQuery (nome_painel x redirect_url).
+    -- Grafias sem hífen / ordem trocada:
+    ('Cotações Bolsas Estaduais',                'Cotações - Bolsas Estaduais'),
+    ('Preços de Referência',                     'Cotações - Preços de Referência'),
+    ('Matrizes Tecnificadas Modelo de Produção', 'Matrizes Tecnificadas - Modelo de Produção'),
+    ('Estabelecimentos SIF',                     'SIF Estabelecimentos'),
+    ('Cenário Empresarial Cadastros',            'Cenário Empresarial - Cadastros'),
+    ('Crédito Rural Suinocultura',               'Crédito Rural - Suinocultura'),
+    ('Comércio Exterior Importações',            'Comércio Exterior'),   -- exp + imp = 1 painel
+    -- Nomes do MAPA da variável GTM "JS - Nome Painel" (versão 10, 2026-10-05):
+    ('Comércio Exterior - Exportações',          'Comércio Exterior'),
+    ('Comércio Exterior - Importações',          'Comércio Exterior'),
+    -- Rótulo-folha (mesmo padrão de Perfil/Movimentação):
+    ('Suinocultura',                             'Crédito Rural - Suinocultura'),
+    ('Programas e Recursos',                     'Crédito Rural - Programas e Recursos'),
+    -- Site traduzido pelo navegador (es/fr):
+    ('Precios de los cerdos CEPEA',                  'Cotações Suínos - CEPEA'),
+    ('Precios del cerdo - CEPEA',                    'Cotações Suínos - CEPEA'),
+    ('Cotizaciones - Bolsas de Valores Estatales',   'Cotações - Bolsas Estaduais'),
+    ('Cotizaciones - Precios de referencia',         'Cotações - Preços de Referência'),
+    ('Precios de referencia',                        'Cotações - Preços de Referência'),
+    ('Cotizaciones - Suministros',                   'Cotações - Insumos'),
+    ('Cotizaciones de entrada',                      'Cotações - Insumos'),
+    ('Costos de producción',                         'Custos de Produção'),
+    ('Matrices tecnificadas - Modelo de producción', 'Matrizes Tecnificadas - Modelo de Produção'),
+    ('Évolution du paysage commercial',              'Cenário Empresarial - Evolução')
 ON CONFLICT (alias) DO UPDATE SET painel = EXCLUDED.painel;
 
 -- Deliberadamente NÃO mapeado: 'Fale com a ABCS' (item de contato, não é painel).
 -- Segue aparecendo em gold.vw_paineis_sem_mapeamento — ok, é sinal de auditoria.
+-- Sem painel identificável (2026-10-05): 'Redução SIF' (redirect_url ambíguo).
+-- Pendente de cadastro na dim (não estão no CSV do time; o GTM já os rastreia):
+-- 'Competitividade Carne Suína' (o '猪肉竞争力' é ele traduzido) e 'Mercado Global'.

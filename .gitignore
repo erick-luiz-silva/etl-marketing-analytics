@@ -20,3 +20,7 @@ report/*.html
 report/*.pdf
 report/*.png
 report/*.txt
+
+# Binários e artefatos locais de ferramentas (MCP toolbox, npx)
+/toolbox
+/package-lock.json
